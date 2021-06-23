@@ -1,33 +1,32 @@
 [![Build Status](https://travis-ci.com/pulp-platform/riscv.svg?branch=master)](https://travis-ci.com/pulp-platform/riscv)
 
-# OpenHW Group CORE-V CV32E40P RISC-V IP
+# OpenHW Group CORE-V CV32E41P RISC-V IP
 
-CV32E40P is a small and efficient, 32-bit, in-order RISC-V core with a 4-stage pipeline that implements
-the RV32IM\[F\]C instruction set architecture, and the Xpulp custom extensions for achieving
+CV32E41P is a small and efficient, 32-bit, in-order RISC-V core with a 4-stage pipeline that implements
+the RV32IM\[F,Zfinx\]C\[Zce\] instruction set architecture, and the Xpulp custom extensions for achieving
 higher code density, performance, and energy efficiency \[[1](https://doi.org/10.1109/TVLSI.2017.2654506)\], \[[2](https://doi.org/10.1109/PATMOS.2017.8106976)\].
-It started its life as a fork of the OR10N CPU core that is based on the OpenRISC ISA.
-Then, under the name of RI5CY, it became a RISC-V core (2016), and it has been maintained
-by the [PULP platform](https://www.pulp-platform.org/) team until February 2020,
-when it has been contributed to [OpenHW Group](https://www.openhwgroup.org/).
+It started its life as a fork of the CV32E40P core to implement the official RISC-V [Zfinx](https://github.com/riscv/riscv-zfinx/blob/main/zfinx-spec-20210511-0.41.pdf) and [Zce](https://github.com/riscv/riscv-code-size-reduction/blob/master/ISA%20proposals/Huawei/Zce_spec.adoc) ISA extensions.
+
+A first implementation of the Zce ISA extensions has been explored in \[[3](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/461404/1/CARRV2020_paper_12_Perotti.pdf)\] to investigate code reduction benefits.
 
 ## Documentation
 
-The CV32E40P user manual can be found in the _docs_ folder and it is
+The CV32E41P user manual can be found in the _docs_ folder and it is
 captured in reStructuredText, rendered to html using [Sphinx](https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html).
 These documents are viewable using readthedocs and can be viewed [here](https://cv32e40p.readthedocs.io/en/latest/).
 
 ## Verification
-The verification environment for the CV32E40P is _not_ in this Repository.  There is a small, simple testbench here which is
+The verification environment for the CV32E41P is _not_ in this Repository.  There is a small, simple testbench here which is
 useful for experimentation only and should not be used to validate any changes to the RTL prior to pushing to the master
 branch of this repo.
 
 The verification environment for this core as well as other cores in the OpenHW Group CORE-V family is at the
 [core-v-verif](https://github.com/openhwgroup/core-v-verif) repository on GitHub.
 
-The Makefiles supported in the **core-v-verif** project automatically clone the appropriate version of the **cv32e40p**  RTL sources.
+The Makefiles supported in the **core-v-verif** project automatically clone the appropriate version of the **cv32e41p**  RTL sources.
 
 ## Constraints
-Example synthesis constraints for the CV32E40P are provided.
+Example synthesis constraints for the CV32E41P are provided.
 
 ## Contributing
 
@@ -53,7 +52,7 @@ The RTL code has been formatted with ["Verible"](https://github.com/google/verib
 
 ## Issues and Troubleshooting
 
-If you find any problems or issues with CV32E40P or the documentation, please check out the [issue
+If you find any problems or issues with CV32E41P or the documentation, please check out the [issue
  tracker](https://github.com/openhwgroup/cv32e40p/issues) and create a new issue if your problem is
 not yet tracked.
 
@@ -66,5 +65,8 @@ not yet tracked.
  ultra-low-power RISC-V cores for Internet-of-Things applications."
  _27th International Symposium on Power and Timing Modeling, Optimization and Simulation
  (PATMOS 2017)_](https://doi.org/10.1109/PATMOS.2017.8106976)
-
-
+ 
+3. [Perotti, Matteo, et al. "HW/SW approaches for RISC-V code size reduction."
+ Workshop on Computer Architecture Research with RISC-V (CARRV 2020). 2020.](https://www.research-collection.ethz.ch/bitstream/handle/20.500.11850/461404/1/CARRV2020_paper_12_Perotti.pdf)
+ 
+  
