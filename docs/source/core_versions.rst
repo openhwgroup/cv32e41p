@@ -18,13 +18,13 @@
 Core Versions and RTL Freeze Rules
 ==================================
 
-The CV32E40P is defined by the ``marchid`` and ``mimpid`` tuple.
+The CV32E41P is defined by the ``marchid`` and ``mimpid`` tuple.
 The tuple identify which sets of parameters have been verified
 by OpenHW Group, and once RTL Freeze is achieved, no further
 non-logically equivalent changes are allowed on that set of parameters.
 
 The RTL Freeze version of the core is indentified by a GitHub
-tag with the format cv32e40p_vMAJOR.MINOR.PATCH (e.g. cv32e40p_v1.0.0).
+tag with the format cv32e41p_vMAJOR.MINOR.PATCH (e.g. cv32e41p_v1.0.0).
 In addition, the release date is reported in the documentation.
 
 What happens after RTL Freeze?
@@ -67,7 +67,7 @@ However, a new GitHub tag should be release and changes documented.
    :align: center
    :alt:
 
-   Versions control of CV32E40P
+   Versions control of CV32E41P
 
 
 Released core versions
@@ -79,7 +79,7 @@ and dates are reported here.
 ``mimpid=0``
 ------------
 
-The ``mimpid=0`` refers to the CV32E40P core verified with the following parameters:
+The ``mimpid=0`` refers to the CV32E41P core verified with the following parameters:
 
 +---------------------------+-------+
 | Name                      | Value |
@@ -100,11 +100,11 @@ Following, all the GitHub tags related to ``mimpid=0``.
 +--------------------+-------------------+------------+--------------------+---------+
 | Git Tag            | Tagged By         | Date       | Reason for Release | Comment |
 +====================+===================+============+====================+=========+
-| cv32e40p_v1.0.0    | Arjan Bink        | 2020-12-10 | RTL Freeze         |         |
+| cv32e41p_v1.0.0    | Arjan Bink        | 2020-12-10 | RTL Freeze         |         |
 +--------------------+-------------------+------------+--------------------+---------+
 
-The list of open (waived) issues at the time of applying the cv32e40p_v1.0.0 tag can be found at:
+The list of open (waived) issues at the time of applying the cv32e41p_v1.0.0 tag can be found at:
 
-* https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E40P/RTL_Freeze_v1.0.0/Design_openissues.md
-* https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E40P/RTL_Freeze_v1.0.0/Verification_openissues.md
-* https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E40P/RTL_Freeze_v1.0.0/Documentation_openissues.md
+* https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E41P/RTL_Freeze_v1.0.0/Design_openissues.md
+* https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E41P/RTL_Freeze_v1.0.0/Verification_openissues.md
+* https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E41P/RTL_Freeze_v1.0.0/Documentation_openissues.md

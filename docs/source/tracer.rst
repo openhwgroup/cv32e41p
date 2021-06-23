@@ -20,9 +20,9 @@
 Tracer
 ======
 
-The module ``cv32e40p_tracer`` can be used to create a log of the executed instructions.
+The module ``cv32e41p_tracer`` can be used to create a log of the executed instructions.
 It is a behavioral, non-synthesizable, module instantiated in the example testbench that is provided for
-the ``cv32e40p_core``. It can be enabled during simulation by defining **CV32E40P_TRACE_EXECUTION**.
+the ``cv32e41p_core``. It can be enabled during simulation by defining **CV32E41P_TRACE_EXECUTION**.
 
 Output file
 -----------

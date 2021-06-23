@@ -55,23 +55,23 @@ Protocol
 The apu bus interface is derived from to the OBI (Open Bus Interface) protocol.
 See https://github.com/openhwgroup/core-v-docs/blob/master/cores/obi/OBI-v1.2.pdf
 for details about the protocol.
-The CV32E40P apu interface uses the ``apu_operands_o``, ``apu_op_o``, and ``apu_flags_o`` as the address signal during the Address phase, indicating its validity with the ``apu_req_o`` signal. It uses the ``apu_result_i`` and ``apu_flags_i`` as the rdata of the response phase. It does not implement the OBI signals: we, be, wdata, auser, wuser, aid,
+The CV32E41P apu interface uses the ``apu_operands_o``, ``apu_op_o``, and ``apu_flags_o`` as the address signal during the Address phase, indicating its validity with the ``apu_req_o`` signal. It uses the ``apu_result_i`` and ``apu_flags_i`` as the rdata of the response phase. It does not implement the OBI signals: we, be, wdata, auser, wuser, aid,
 rready, err, ruser, rid. These signals can be thought of as being tied off as
 specified in the OBI specification.
-The CV32E40P apu interface can cause up to two outstanding transactions.
+The CV32E41P apu interface can cause up to two outstanding transactions.
 
 Connection with the FPU
 -----------------------
 
-The CV32E40P sends FP operands over the ``apu_operands_o`` bus; the decoded RV32F operation as ADD, SUB, MUL, etc through the ``apu_op_o`` bus; the cast, destination and source formats as well as rounding mode through the ``apu_flags_o`` bus. The respose is the FPU result and relative output flags as Overflow, Underflow, etc.
+The CV32E41P sends FP operands over the ``apu_operands_o`` bus; the decoded RV32F operation as ADD, SUB, MUL, etc through the ``apu_op_o`` bus; the cast, destination and source formats as well as rounding mode through the ``apu_flags_o`` bus. The respose is the FPU result and relative output flags as Overflow, Underflow, etc.
 
 
 APU Tracer
 ----------
 
-The module ``cv32e40p_apu_tracer`` can be used to create a log of the APU interface.
+The module ``cv32e41p_apu_tracer`` can be used to create a log of the APU interface.
 It is a behavioral, non-synthesizable, module instantiated in the example testbench that is provided for
-the ``cv32e40p_core``. It can be enabled during simulation by defining **CV32E40P_APU_TRACE**.
+the ``cv32e41p_core``. It can be enabled during simulation by defining **CV32E41P_APU_TRACE**.
 
 Output file
 -----------

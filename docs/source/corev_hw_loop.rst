@@ -20,7 +20,7 @@
 CORE-V Hardware Loop Extensions
 ===============================
 
-To increase the efficiency of small loops, CV32E40P supports hardware
+To increase the efficiency of small loops, CV32E41P supports hardware
 loops (HWLoop) optionally. They can be enabled by setting
 the ``PULP_XPULP`` parameter.
 Hardware loops make executing a piece of code
@@ -31,7 +31,7 @@ instruction of a loop.
 A hardware loop is defined by its start address (pointing to the first
 instruction in the loop), its end address (pointing to the instruction
 that will be executed last in the loop) and a counter that is
-decremented every time the loop body is executed. CV32E40P contains two
+decremented every time the loop body is executed. CV32E41P contains two
 hardware loop register sets to support nested hardware loops, each of
 them can store these three values in separate flip flops which are
 mapped in the CSR address space.

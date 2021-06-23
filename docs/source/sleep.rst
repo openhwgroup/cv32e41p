@@ -20,10 +20,10 @@
 Sleep Unit
 ==========
 
-Source File: :file:`rtl/cv32e40p_sleep_unit.sv`
+Source File: :file:`rtl/cv32e41p_sleep_unit.sv`
 
 The Sleep Unit contains and controls the instantiated clock gate, see :ref:`clock-gating-cell`, that gates ``clk_i`` and produces a gated clock
-for use by the other modules inside CV32E40P. The Sleep Unit is the only place in which ``clk_i`` itself is used; all
+for use by the other modules inside CV32E41P. The Sleep Unit is the only place in which ``clk_i`` itself is used; all
 other modules use the gated version of ``clk_i``.
 
 The clock gating in the Sleep Unit is impacted by the following:
@@ -76,7 +76,7 @@ The clock gating in the Sleep Unit is impacted by the following:
 Startup behavior
 ----------------
 
-``clk_i`` is internally gated off (while signaling ``core_sleep_o`` = 0) during CV32E40P startup:
+``clk_i`` is internally gated off (while signaling ``core_sleep_o`` = 0) during CV32E41P startup:
 
  * ``clk_i`` is internally gated off during ``rst_ni`` assertion
  * ``clk_i`` is internally gated off from ``rst_ni`` deassertion until ``fetch_enable_i`` = 1
@@ -125,17 +125,17 @@ will not become 1.
 PULP Cluster Extension
 ----------------------
 
-CV32E40P has an optional extension to enable its usage in a PULP Cluster in the PULP (Parallel Ultra Low Power) platform.
+CV32E41P has an optional extension to enable its usage in a PULP Cluster in the PULP (Parallel Ultra Low Power) platform.
 This extension is enabled by setting the ``PULP_CLUSTER`` parameter to 1. The PULP platform is organized as clusters of
-multiple (typically 4 or 8) CV32E40P cores that share a tightly-coupled data memory, aimed at running digital signal processing
+multiple (typically 4 or 8) CV32E41P cores that share a tightly-coupled data memory, aimed at running digital signal processing
 applications efficiently.
 
-The mechanism via which CV32E40P cores in a PULP Cluster synchronize with each other is implemented via the custom **cv.elw** instruction
+The mechanism via which CV32E41P cores in a PULP Cluster synchronize with each other is implemented via the custom **cv.elw** instruction
 that performs a read transaction on an external Event Unit (which for example implements barriers and semaphores). This
-read transaction to the Event Unit together with the ``core_sleep_o`` signal inform the Event Unit that the CV32E40P is not busy and 
+read transaction to the Event Unit together with the ``core_sleep_o`` signal inform the Event Unit that the CV32E41P is not busy and 
 ready to go to sleep. Only in that case the Event Unit is allowed to set ``pulp_clock_en_i`` to 0, thereby gating off ``clk_i``
-internal to the core. Once the CV32E40P core is ready to start again (e.g. when the last core meets the barrier), ``pulp_clock_en_i`` is
-set to 1 thereby enabling the CV32E40P to run again.
+internal to the core. Once the CV32E41P core is ready to start again (e.g. when the last core meets the barrier), ``pulp_clock_en_i`` is
+set to 1 thereby enabling the CV32E41P to run again.
 
 If the PULP Cluster extension is not used (``PULP_CLUSTER`` = 0), the ``pulp_clock_en_i`` signal is not used and should be tied to 0.
 
@@ -147,7 +147,7 @@ Execution of a **cv.elw** instructions causes ``core_sleep_o`` = 1 only if all o
  * The core is not single stepping (debug)
  * The core does not have a trigger match (debug)
 
-As ``pulp_clock_en_i`` can directly impact the internal clock gate, certain requirements are imposed on the environment of CV32E40P
+As ``pulp_clock_en_i`` can directly impact the internal clock gate, certain requirements are imposed on the environment of CV32E41P
 in case ``PULP_CLUSTER`` = 1:
 
  * If ``core_sleep_o`` = 0, then ``pulp_clock_en_i`` must be 1
