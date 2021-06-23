@@ -18,7 +18,7 @@
 .. _pipeline-details:
 
 .. figure:: ../images/CV32E40P_Pipeline.png
-   :name: cv32e40p-pipeline
+   :name: cv32e41p-pipeline
    :align: center
 
    CV32E40P Pipeline

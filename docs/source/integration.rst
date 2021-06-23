@@ -20,7 +20,7 @@
 Core Integration
 ================
 
-The main module is named ``cv32e40p_core`` and can be found in ``cv32e40p_core.sv``.
+The main module is named ``cv32e41p_core`` and can be found in ``cv32e41p_core.sv``.
 Below, the instantiation template is given and the parameters and interfaces are described.
 
 Instantiation Template
@@ -28,7 +28,7 @@ Instantiation Template
 
 .. code-block:: verilog
 
-  cv32e40p_core #(
+  cv32e41p_core #(
       .FPU                      ( 0 ),
       .NUM_MHPMCOUNTERS         ( 1 ),
       .PULP_CLUSTER             ( 0 ),
@@ -102,7 +102,7 @@ Parameters
 
 .. note::
    The instruction encodings for the PULP instructions is expected to change in a non-backward-compatible manner, 
-   see https://github.com/openhwgroup/cv32e40p/issues/452.
+   see https://github.com/openhwgroup/cv32e41p/issues/452.
 
 +------------------------------+-------------+------------+------------------------------------------------------------------+
 | Name                         | Type/Range  | Default    | Description                                                      |

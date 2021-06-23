@@ -53,7 +53,7 @@ module riscv_gnt_stall #(
   // -----------------------------------------------------------------------------------------------
 
 
-  import cv32e40p_pkg::*;
+  import cv32e41p_pkg::*;
   import perturbation_pkg::*;
 
   logic   req_core_i_q;

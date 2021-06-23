@@ -138,9 +138,9 @@ is supported as well.
 All the files in the ``rtl`` and ``rtl/include`` folders are synthesizable.
 The user should first decide whether to use the flip-flop or latch-based register-file ( see :ref:`register-file`).
 Secondly, the user must provide a clock-gating module that instantiates the clock-gating cells of the target technology. This file must have the same interface and module name of the one provided for simulation-only purposes
-at ``bhv/cv32e40p_sim_clock_gate.sv`` (see :ref:`clock-gating-cell`).
+at ``bhv/cv32e41p_sim_clock_gate.sv`` (see :ref:`clock-gating-cell`).
 
-The ``constraints/cv32e40p_core.sdc`` file provides an example of synthesis constraints.
+The ``constraints/cv32e41p_core.sdc`` file provides an example of synthesis constraints.
 
 
 ASIC Synthesis
@@ -176,7 +176,7 @@ It is recommended that you start by reviewing the
 In early 2021 the CV32E40P achieved Functional RTL Freeze, meaning that is has
 been fully verified as per its
 `Verification Plan <https://github.com/openhwgroup/core-v-docs/blob/master/verif/CV32E40P/README.md>`_.
-The top-level `README in core-v-verif <https://github.com/openhwgroup/core-v-verif#cv32e40p-coverage-data>`_
+The top-level `README in core-v-verif <https://github.com/openhwgroup/core-v-verif#cv32e41p-coverage-data>`_
 has a link to the final functional, code and test coverage reports.
 
 The unofficial start date for the CV32E40P verification effort is 2020-02-27,

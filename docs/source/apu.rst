@@ -69,9 +69,9 @@ The CV32E40P sends FP operands over the ``apu_operands_o`` bus; the decoded RV32
 APU Tracer
 ----------
 
-The module ``cv32e40p_apu_tracer`` can be used to create a log of the APU interface.
+The module ``cv32e41p_apu_tracer`` can be used to create a log of the APU interface.
 It is a behavioral, non-synthesizable, module instantiated in the example testbench that is provided for
-the ``cv32e40p_core``. It can be enabled during simulation by defining **CV32E40P_APU_TRACE**.
+the ``cv32e41p_core``. It can be enabled during simulation by defining **CV32E40P_APU_TRACE**.
 
 Output file
 -----------

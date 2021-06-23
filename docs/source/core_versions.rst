@@ -24,7 +24,7 @@ by OpenHW Group, and once RTL Freeze is achieved, no further
 non-logically equivalent changes are allowed on that set of parameters.
 
 The RTL Freeze version of the core is indentified by a GitHub
-tag with the format cv32e40p_vMAJOR.MINOR.PATCH (e.g. cv32e40p_v1.0.0).
+tag with the format cv32e41p_vMAJOR.MINOR.PATCH (e.g. cv32e41p_v1.0.0).
 In addition, the release date is reported in the documentation.
 
 What happens after RTL Freeze?
@@ -100,10 +100,10 @@ Following, all the GitHub tags related to ``mimpid=0``.
 +--------------------+-------------------+------------+--------------------+---------+
 | Git Tag            | Tagged By         | Date       | Reason for Release | Comment |
 +====================+===================+============+====================+=========+
-| cv32e40p_v1.0.0    | Arjan Bink        | 2020-12-10 | RTL Freeze         |         |
+| cv32e41p_v1.0.0    | Arjan Bink        | 2020-12-10 | RTL Freeze         |         |
 +--------------------+-------------------+------------+--------------------+---------+
 
-The list of open (waived) issues at the time of applying the cv32e40p_v1.0.0 tag can be found at:
+The list of open (waived) issues at the time of applying the cv32e41p_v1.0.0 tag can be found at:
 
 * https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E40P/RTL_Freeze_v1.0.0/Design_openissues.md
 * https://github.com/openhwgroup/core-v-docs/blob/master/program/milestones/CV32E40P/RTL_Freeze_v1.0.0/Verification_openissues.md

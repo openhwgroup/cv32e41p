@@ -689,7 +689,7 @@ module mm_ram #(
   );
 
 `ifndef VERILATOR
-  cv32e40p_random_interrupt_generator random_interrupt_generator_i (
+  cv32e41p_random_interrupt_generator random_interrupt_generator_i (
       .rst_ni          (rst_ni),
       .clk_i           (clk_i),
       .irq_i           (1'b0),
