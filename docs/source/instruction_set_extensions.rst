@@ -20,7 +20,7 @@
 CORE-V Instruction Set Extensions
 =================================
 
-CV32E40P supports the following CORE-V ISA Extensions, which are part of **Xcorev** and can be enabled by setting ``PULP_XPULP`` == 1. 
+CV32E41P supports the following CORE-V ISA Extensions, which are part of **Xcorev** and can be enabled by setting ``PULP_XPULP`` == 1. 
 
  * Post-Incrementing load and stores, see :ref:`corev_load_store`.
  * Hardware Loop extension, see :ref:`corev_hardware_loop`.
@@ -247,7 +247,7 @@ Event Load Instructions
 -----------------------
 
 The event load instruction **cv.elw** is only supported if the ``PULP_CLUSTER`` parameter is set to 1.
-The event load performs a load word and can cause the CV32E40P to enter a sleep state as explained
+The event load performs a load word and can cause the CV32E41P to enter a sleep state as explained
 in :ref:`pulp_cluster`.
 
 Load Operations
@@ -277,7 +277,7 @@ Encoding
 Hardware Loops
 --------------
 
-CV32E40P supports 2 levels of nested hardware loops. The loop has to be
+CV32E41P supports 2 levels of nested hardware loops. The loop has to be
 setup before entering the loop body. For this purpose, there are two
 methods, either the long commands that separately set start- and
 end-addresses of the loop and the number of iterations, or the short
@@ -354,7 +354,7 @@ Encoding
 ALU
 ---
 
-CV32E40P supports advanced ALU operations that allow to perform multiple
+CV32E41P supports advanced ALU operations that allow to perform multiple
 instructions that are specified in the base instruction set in one
 single instruction and thus increases efficiency of the core. For
 example, those instructions include zero-/sign-extension instructions
@@ -805,7 +805,7 @@ Immediate Branching Encoding
 Multiply-Accumulate
 -------------------
 
-CV32E40P supports custom extensions for multiply-accumulate and half-word multiplications with
+CV32E41P supports custom extensions for multiply-accumulate and half-word multiplications with
 an optional post-multiplication shift.
 
 The custom multiply-accumulate extensions are only supported if ``PULP_XPULP`` == 1.

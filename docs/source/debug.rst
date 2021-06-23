@@ -20,7 +20,7 @@
 Debug & Trigger
 ===============
 
-CV32E40P offers support for execution-based debug according to the `RISC-V Debug Specification <https://riscv.org/specifications/debug-specification/>`_, version 0.13.2. The main requirements for the core are described in Chapter 4: RISC-V Debug, Chapter 5: Trigger Module, and Appendix A.2: Execution Based.
+CV32E41P offers support for execution-based debug according to the `RISC-V Debug Specification <https://riscv.org/specifications/debug-specification/>`_, version 0.13.2. The main requirements for the core are described in Chapter 4: RISC-V Debug, Chapter 5: Trigger Module, and Appendix A.2: Execution Based.
 
 The following list shows the simplified overview of events that occur in the core when debug is requested:
 
@@ -41,7 +41,7 @@ A user wishing to perform an abstract access, whereby the user can observe or co
 
 .. note::
 
-   Debug support in CV32E40P is only one of the components needed to build a System on Chip design with run-control debug support (think "the ability to attach GDB to a core over JTAG").
+   Debug support in CV32E41P is only one of the components needed to build a System on Chip design with run-control debug support (think "the ability to attach GDB to a core over JTAG").
    Additionally, a Debug Module and a Debug Transport Module, compliant with the RISC-V Debug Specification, are needed.
 
    A supported open source implementation of these building blocks can be found in the `RISC-V Debug Support for PULP Cores IP block <https://github.com/pulp-platform/riscv-dbg/>`_.
@@ -52,7 +52,7 @@ The CV3240P also supports a Trigger Module to enable entry into Debug Mode on a 
  - Number of trigger register(s) : 1
  - Supported trigger types: instruction address match (Match Control)
 
-The CV32E40P will not support the optional debug features 10, 11, & 12 listed in Section 4.1 of the `RISC-V Debug Specification <https://riscv.org/specifications/debug-specification/>`_. Specifically, a control transfer instruction's destination location being in or out of the Program Buffer and instructions depending on PC value shall **not** cause an illegal instruction.
+The CV32E41P will not support the optional debug features 10, 11, & 12 listed in Section 4.1 of the `RISC-V Debug Specification <https://riscv.org/specifications/debug-specification/>`_. Specifically, a control transfer instruction's destination location being in or out of the Program Buffer and instructions depending on PC value shall **not** cause an illegal instruction.
 
 Interface
 ---------
@@ -78,12 +78,12 @@ Interface
 ``debug_havereset_o``, ``debug_running_o``, and ``debug_mode_o`` signals provide the operational status of the core to the debug module. The assertion of these
 signals is mutually exclusive.
 
-``debug_havereset_o`` is used to signal that the CV32E40P has been reset. ``debug_havereset_o`` is set high during the assertion of ``rst_ni``. It will be
+``debug_havereset_o`` is used to signal that the CV32E41P has been reset. ``debug_havereset_o`` is set high during the assertion of ``rst_ni``. It will be
 cleared low a few (unspecified) cycles after ``rst_ni`` has been deasserted **and** ``fetch_enable_i`` has been sampled high.
 
-``debug_running_o`` is used to signal that the CV32E40P is running normally.
+``debug_running_o`` is used to signal that the CV32E41P is running normally.
 
-``debug_halted_o`` is used to signal that the CV32E40P is in debug mode.
+``debug_halted_o`` is used to signal that the CV32E41P is in debug mode.
 
 ``dm_halt_addr_i`` is the address where the PC jumps to for a debug entry event. When in Debug Mode, an ebreak instruction will also cause the PC to jump back to this address without affecting status registers. (see :ref:`ebreak_behavior` below)
 
@@ -94,7 +94,7 @@ Both ``dm_halt_addr_i`` and ``dm_exception_addr_i`` must be word aligned.
 Core Debug Registers
 --------------------
 
-CV32E40P implements four core debug registers, namely :ref:`csr-dcsr`, :ref:`csr-dpc`, and two debug scratch registers. Access to these registers in non Debug Mode results in an illegal instruction.
+CV32E41P implements four core debug registers, namely :ref:`csr-dcsr`, :ref:`csr-dpc`, and two debug scratch registers. Access to these registers in non Debug Mode results in an illegal instruction.
 
 Several trigger registers are required to adhere to specification. The following are the most relevant: :ref:`csr-tselect`, :ref:`csr-tdata1`,  :ref:`csr-tdata2` and :ref:`csr-tinfo`
 
@@ -107,10 +107,10 @@ Debug state
 As specified in `RISC-V Debug Specification <https://riscv.org/specifications/debug-specification/>`_ every hart that can be selected by
 the Debug Module is in exactly one of four states: ``nonexistent``, ``unavailable``, ``running`` or ``halted``.
 
-The remainder of this section assumes that the CV32E40P will not be classified as ``nonexistent`` by the integrator.
+The remainder of this section assumes that the CV32E41P will not be classified as ``nonexistent`` by the integrator.
 
-The CV32E40P signals to the Debug Module whether it is ``running`` or ``halted`` via its ``debug_running_o`` and ``debug_halted_o`` pins
-respectively. Therefore, assuming that this core will not be integrated as a ``nonexistent`` core, the CV32E40P is classified as ``unavailable``
+The CV32E41P signals to the Debug Module whether it is ``running`` or ``halted`` via its ``debug_running_o`` and ``debug_halted_o`` pins
+respectively. Therefore, assuming that this core will not be integrated as a ``nonexistent`` core, the CV32E41P is classified as ``unavailable``
 when neither ``debug_running_o`` or ``debug_halted_o`` is asserted. Upon ``rst_ni`` assertion the debug state will be ``unavailable`` until some
 cycle(s) after ``rst_ni`` has been deasserted and ``fetch_enable_i`` has been sampled high. After this point (until a next reset assertion) the
 core will transition between having its ``debug_halted_o`` or ``debug_running_o`` pin asserted depending whether the core is in debug mode or not.
@@ -134,10 +134,10 @@ Exactly one of the ``debug_havereset_o``, ``debug_running_o``, ``debug_halted_o`
 
 The key properties of the debug states are:
 
- * The CV32E40P can remain in its ``unavailable`` state for an arbitrarily long time (depending on ``rst_ni`` and ``fetch_enable_i``).
- * If ``debug_req_i`` is asserted after ``rst_ni`` deassertion and before or coincident with the assertion of ``fetch_enable_i``, then the CV32E40P
+ * The CV32E41P can remain in its ``unavailable`` state for an arbitrarily long time (depending on ``rst_ni`` and ``fetch_enable_i``).
+ * If ``debug_req_i`` is asserted after ``rst_ni`` deassertion and before or coincident with the assertion of ``fetch_enable_i``, then the CV32E41P
    is guaranteed to transition straight from its ``unavailable`` state into its ``halted`` state. If ``debug_req_i`` is asserted at a later
-   point in time, then the CV32E40P might transition through the ``running`` state on its ways to the ``halted`` state.
+   point in time, then the CV32E41P might transition through the ``running`` state on its ways to the ``halted`` state.
  * If ``debug_req_i`` is asserted during the ``running`` state, the core will eventually transition into the ``halted`` state (typically after a couple of cycles).
 
 .. _ebreak_behavior:
@@ -157,7 +157,7 @@ Executing the EBREAK instruction when the core is **not** in Debug Mode and the 
 
 To properly return from the exception, the ebreak handler will need to increment the MEPC to the next instruction. This requires querying the size of the ebreak instruction that was used to enter the exception (16 bit c.ebreak or 32 bit ebreak). 
 
-*Note: The CV32E40P does not support MTVAL CSR register which would have saved the value of the instruction for exceptions. This may be supported on a future core.*
+*Note: The CV32E41P does not support MTVAL CSR register which would have saved the value of the instruction for exceptions. This may be supported on a future core.*
 
 Scenario 2 : Enter Debug Mode
 """""""""""""""""""""""""""""

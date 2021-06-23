@@ -17,16 +17,16 @@
 
 .. _pipeline-details:
 
-.. figure:: ../images/CV32E40P_Pipeline.png
+.. figure:: ../images/CV32E41P_Pipeline.png
    :name: cv32e41p-pipeline
    :align: center
 
-   CV32E40P Pipeline
+   CV32E41P Pipeline
 
 Pipeline Details
 ================
 
-CV32E40P has a 4-stage in-order completion pipeline, the 4 stages are:
+CV32E41P has a 4-stage in-order completion pipeline, the 4 stages are:
 
 Instruction Fetch (IF)
   Fetches instructions from memory via an aligning prefetch buffer, capable of fetching 1 instruction per cycle if the instruction side memory system allows. The IF stage also pre-decodes RVC instructions into RV32I base instructions. See :ref:`instruction-fetch` for details.
@@ -74,7 +74,7 @@ and zero stall on the data-side memory interface.
   |                       |                                      |                                                             |
   |                       | 4 (cv.elw)                           |                                                             |
   +-----------------------+--------------------------------------+-------------------------------------------------------------+
-  | Multiplication        | 1 (mul)                              | CV32E40P uses a single-cycle 32-bit x 32-bit multiplier     |
+  | Multiplication        | 1 (mul)                              | CV32E41P uses a single-cycle 32-bit x 32-bit multiplier     |
   |                       |                                      | with a 32-bit result. The multiplications with upper-word   |
   |                       | 5 (mulh, mulhsu, mulhu)              | result take 5 cycles to compute.                            |
   +-----------------------+--------------------------------------+-------------------------------------------------------------+
@@ -107,7 +107,7 @@ and zero stall on the data-side memory interface.
 Hazards
 -------
 
-The CV32E40P experiences a 1 cycle penalty on the following hazards.
+The CV32E41P experiences a 1 cycle penalty on the following hazards.
 
  * Load data hazard (in case the instruction immediately following a load uses the result of that load)
  * Jump register (jalr) data hazard (in case that a jalr depends on the result of an immediately preceding instruction)
