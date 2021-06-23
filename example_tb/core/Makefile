@@ -47,10 +47,10 @@ VSIM_SCRIPT             = vsim.tcl
 # RTL source files
 RTLSRC_HOME             := ../..
 export DESIGN_RTL_DIR = $(RTLSRC_HOME)/rtl
-CV_CORE_MANIFEST    := $(RTLSRC_HOME)/cv32e40p_manifest.flist
+CV_CORE_MANIFEST    := $(RTLSRC_HOME)/cv32e41p_manifest.flist
 RTLSRC_TB_PKG		:= include/perturbation_pkg.sv
 RTLSRC_TB_TOP		:= tb_top.sv
-RTLSRC_TB		:= $(filter-out cv32e40p_fp_wrapper.sv,\
+RTLSRC_TB		:= $(filter-out cv32e41p_fp_wrapper.sv,\
 				$(wildcard *.sv))
 
 RTLSRC_FPNEW_TB		:= $(wildcard *.sv)
