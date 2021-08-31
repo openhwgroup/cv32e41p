@@ -13,7 +13,7 @@ A first implementation of the Zce ISA extensions has been explored in \[[3](http
 
 The CV32E41P user manual can be found in the _docs_ folder and it is
 captured in reStructuredText, rendered to html using [Sphinx](https://docs.readthedocs.io/en/stable/intro/getting-started-with-sphinx.html).
-These documents are viewable using readthedocs and can be viewed [here](https://cv32e40p.readthedocs.io/en/latest/).
+These documents are viewable using readthedocs and can be viewed [here](https://docs.openhwgroup.org/projects/openhw-group-cv32e41p/).
 
 ## Verification
 The verification environment for the CV32E41P is _not_ in this Repository.  There is a small, simple testbench here which is
