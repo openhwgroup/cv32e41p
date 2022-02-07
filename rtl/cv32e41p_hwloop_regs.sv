@@ -110,7 +110,7 @@ module cv32e41p_hwloop_regs #(
   //----------------------------------------------------------------------------
   // Assertions
   //----------------------------------------------------------------------------
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
   // do not decrement more than one counter at once
   assert property (@(posedge clk) (valid_i) |-> ($countones(hwlp_dec_cnt_i) <= 1));
 `endif

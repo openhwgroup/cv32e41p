@@ -282,7 +282,7 @@ module cv32e41p_if_stage #(
   // Assertions
   //----------------------------------------------------------------------------
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   generate
     if (!PULP_XPULP) begin : gen_no_pulp_xpulp_assertions

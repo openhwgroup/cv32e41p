@@ -1516,7 +1516,7 @@ endgenerate
   // Assertions
   //----------------------------------------------------------------------------
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   // make sure that taken branches do not happen back-to-back, as this is not
   // possible without branch prediction in the IF stage

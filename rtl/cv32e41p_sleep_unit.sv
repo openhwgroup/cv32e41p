@@ -162,7 +162,7 @@ module cv32e41p_sleep_unit #(
   // Assertions
   //----------------------------------------------------------------------------
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   // Clock gate is disabled during RESET state of the controller
   property p_clock_en_0;
