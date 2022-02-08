@@ -38,8 +38,7 @@ ${DESIGN_RTL_DIR}/cv32e41p_register_file_ff.sv
 ${DESIGN_RTL_DIR}/cv32e41p_load_store_unit.sv
 ${DESIGN_RTL_DIR}/cv32e41p_id_stage.sv
 ${DESIGN_RTL_DIR}/cv32e41p_aligner.sv
-${DESIGN_RTL_DIR}/cv32e41p_decoder.sv
-${DESIGN_RTL_DIR}/cv32e41p_compressed_decoder.sv
+${DESIGN_RTL_DIR}/cv32e41p_merged_decoder.sv
 ${DESIGN_RTL_DIR}/cv32e41p_fifo.sv
 ${DESIGN_RTL_DIR}/cv32e41p_prefetch_buffer.sv
 ${DESIGN_RTL_DIR}/cv32e41p_hwloop_regs.sv
