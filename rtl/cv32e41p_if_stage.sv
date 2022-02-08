@@ -29,7 +29,11 @@ module cv32e41p_if_stage #(
     parameter PULP_XPULP      = 0,                        // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding p.elw)
     parameter PULP_OBI = 0,  // Legacy PULP OBI behavior
     parameter PULP_SECURE = 0,
-    parameter FPU = 0
+    parameter FPU = 0,
+    parameter Zcea = 0,
+    parameter Zceb = 0,
+    parameter Zcec = 0,
+    parameter Zcee = 0
 ) (
     input logic clk,
     input logic rst_n,
@@ -60,8 +64,6 @@ module cv32e41p_if_stage #(
     // Output of IF Pipeline stage
     output logic instr_valid_id_o,  // instruction in IF/ID pipeline is valid
     output logic       [31:0] instr_rdata_id_o,      // read instruction is sampled and sent to ID stage for decoding
-    output logic is_compressed_id_o,  // compressed decoder thinks this is a compressed instruction
-    output logic illegal_c_insn_id_o,  // compressed decoder thinks this is an invalid instruction
     output logic [31:0] pc_if_o,
     output logic [31:0] pc_id_o,
     output logic is_fetch_failed_o,
@@ -120,7 +122,6 @@ module cv32e41p_if_stage #(
   logic        aligner_ready;
   logic        instr_valid;
 
-  logic        illegal_c_insn;
   logic [31:0] instr_aligned;
   logic [31:0] instr_decompressed;
   logic        instr_compressed_int;
@@ -232,15 +233,11 @@ module cv32e41p_if_stage #(
       instr_rdata_id_o    <= '0;
       is_fetch_failed_o   <= 1'b0;
       pc_id_o             <= '0;
-      is_compressed_id_o  <= 1'b0;
-      illegal_c_insn_id_o <= 1'b0;
     end else begin
 
       if (if_valid && instr_valid) begin
         instr_valid_id_o    <= 1'b1;
-        instr_rdata_id_o    <= instr_decompressed;
-        is_compressed_id_o  <= instr_compressed_int;
-        illegal_c_insn_id_o <= illegal_c_insn;
+        instr_rdata_id_o    <= instr_aligned;
         is_fetch_failed_o   <= 1'b0;
         pc_id_o             <= pc_if_o;
       end else if (clear_instr_valid_i) begin
@@ -269,14 +266,6 @@ module cv32e41p_if_stage #(
       .pc_o            (pc_if_o)
   );
 
-  cv32e41p_compressed_decoder #(
-      .FPU(FPU)
-  ) compressed_decoder_i (
-      .instr_i        (instr_aligned),
-      .instr_o        (instr_decompressed),
-      .is_compressed_o(instr_compressed_int),
-      .illegal_instr_o(illegal_c_insn)
-  );
 
   //----------------------------------------------------------------------------
   // Assertions

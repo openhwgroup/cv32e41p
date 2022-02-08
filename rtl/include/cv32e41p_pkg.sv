@@ -70,7 +70,20 @@ package cv32e41p_pkg;
   parameter REGC_RD = 2'b01;
   parameter REGC_ZERO = 2'b11;
 
+  // Source/Destination register instruction index
+  parameter REG_S1_MSB = 19;
+  parameter REG_S1_LSB = 15;
 
+  parameter REG_S2_MSB = 24;
+  parameter REG_S2_LSB = 20;
+
+  parameter REG_S4_MSB = 31;
+  parameter REG_S4_LSB = 27;
+
+  parameter REG_D_MSB = 11;
+  parameter REG_D_LSB = 7;
+  
+  
   //////////////////////////////////////////////////////////////////////////////
   //      _    _    _   _    ___                       _   _                  //
   //     / \  | |  | | | |  / _ \ _ __   ___ _ __ __ _| |_(_) ___  _ __  ___  //
@@ -585,18 +598,29 @@ package cv32e41p_pkg;
   parameter OP_B_BMASK = 3'b100;
 
   // immediate b selection
-  parameter IMMB_I = 4'b0000;
-  parameter IMMB_S = 4'b0001;
-  parameter IMMB_U = 4'b0010;
-  parameter IMMB_PCINCR = 4'b0011;
-  parameter IMMB_S2 = 4'b0100;
-  parameter IMMB_S3 = 4'b0101;
-  parameter IMMB_VS = 4'b0110;
-  parameter IMMB_VU = 4'b0111;
-  parameter IMMB_SHUF = 4'b1000;
-  parameter IMMB_CLIP = 4'b1001;
-  parameter IMMB_BI = 4'b1011;
-
+  parameter IMMB_I      = 5'b00000;  // 0
+  parameter IMMB_S      = 5'b00001;  // 1
+  parameter IMMB_U      = 5'b00010;  // 2
+  parameter IMMB_PCINCR = 5'b00011;  // 3
+  parameter IMMB_S2     = 5'b00100;  // 4
+  parameter IMMB_S3     = 5'b00101;  // 5
+  parameter IMMB_VS     = 5'b00110;  // 6
+  parameter IMMB_VU     = 5'b00111;  // 7
+  parameter IMMB_SHUF   = 5'b01000;  // 8
+  parameter IMMB_CLIP   = 5'b01001;  // 9
+  parameter IMMB_BI     = 5'b01010;  //10
+  parameter IMMB_CJAL   = 5'b01011;  //11
+  parameter IMMB_CSPN   = 5'b01100;  //12
+  parameter IMMB_CFLDSP = 5'b01101;  //13
+  parameter IMMB_CADDI  = 5'b01110;  //14
+  parameter IMMB_CLWSP  = 5'b01111;  //15
+  parameter IMMB_CLD    = 5'b10000;  //16
+  parameter IMMB_CSWSP  = 5'b10001;  //17
+  parameter IMMB_FSDP   = 5'b10010;  //18
+  parameter IMMB_CLW    = 5'b10011;  //19
+  parameter IMMB_CSRLI  = 5'b10100;  //20
+  parameter IMMB_CANDI  = 5'b10101;  //21
+  parameter IMMB_CLUI   = 5'b10110;  //22
   // bit mask selection
   parameter BMASK_A_ZERO = 1'b0;
   parameter BMASK_A_S3 = 1'b1;
@@ -628,9 +652,12 @@ package cv32e41p_pkg;
   parameter BRANCH_COND = 2'b11;  // conditional branches
 
   // jump target mux
-  parameter JT_JAL = 2'b01;
-  parameter JT_JALR = 2'b10;
-  parameter JT_COND = 2'b11;
+  parameter JT_JAL   = 3'b001;
+  parameter JT_JALR  = 3'b010;
+  parameter JT_COND  = 3'b011;
+  parameter JT_CJAL  = 3'b100;
+  parameter JT_CCOND = 3'b101;
+  parameter JT_CJALR = 3'b110;
 
   // Atomic operations
   parameter AMO_LR = 5'b00010;

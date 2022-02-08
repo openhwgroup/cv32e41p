@@ -35,6 +35,10 @@ module cv32e41p_id_stage
     parameter PULP_CLUSTER = 0,
     parameter N_HWLP = 2,
     parameter N_HWLP_BITS = $clog2(N_HWLP),
+    parameter Zcea = 0,
+    parameter Zceb = 0,
+    parameter Zcec = 0,
+    parameter Zcee = 0,
     parameter PULP_SECURE = 0,
     parameter USE_PMP = 0,
     parameter A_EXTENSION = 0,
@@ -61,8 +65,6 @@ module cv32e41p_id_stage
     input  logic        instr_valid_i,
     input  logic [31:0] instr_rdata_i,  // comes from pipeline of IF stage
     output logic        instr_req_o,
-    input  logic        is_compressed_i,
-    input  logic        illegal_c_insn_i,
 
     // Jumps and branches
     output logic        branch_in_ex_o,
@@ -251,21 +253,12 @@ module cv32e41p_id_stage
     input logic [31:0] mcounteren_i
 );
 
-  // Source/Destination register instruction index
-  localparam REG_S1_MSB = 19;
-  localparam REG_S1_LSB = 15;
 
-  localparam REG_S2_MSB = 24;
-  localparam REG_S2_LSB = 20;
-
-  localparam REG_S4_MSB = 31;
-  localparam REG_S4_LSB = 27;
-
-  localparam REG_D_MSB = 11;
-  localparam REG_D_LSB = 7;
 
   logic [31:0] instr;
 
+  logic      is_compressed;
+  logic      illegal_c_insn;
 
   // Decoder/Controller ID stage internal signals
   logic        deassert_we;
@@ -318,6 +311,20 @@ module cv32e41p_id_stage
   logic [31:0] imm_shuffle_type;
   logic [31:0] imm_clip_type;
 
+  logic [31:0] imm_cjal_type;
+  logic [31:0] imm_cspn_type;
+  logic [31:0] imm_cfldsp_type;
+  logic [31:0] imm_caddi_type;
+  logic [31:0] imm_clwsp_type;
+  logic [31:0] imm_cld_type;
+  logic [31:0] imm_cswsp_type;
+  logic [31:0] imm_fsdp_type;
+  logic [31:0] imm_clw_type;
+  logic [31:0] imm_csrli_type;
+  logic [31:0] imm_candi_type;
+  logic [31:0] imm_cbeq_type;
+  logic [31:0] imm_clui_type;
+  
   logic [31:0] imm_a;  // contains the immediate for operand b
   logic [31:0] imm_b;  // contains the immediate for operand b
 
@@ -333,6 +340,11 @@ module cv32e41p_id_stage
   logic [ 5:0] regfile_addr_ra_id;
   logic [ 5:0] regfile_addr_rb_id;
   logic [ 5:0] regfile_addr_rc_id;
+
+  logic [ 4:0] addr_ra_id;
+  logic [ 4:0] addr_rb_id;
+  logic [ 4:0] addr_rc_id;
+  logic [ 4:0] decoder_waddr_id;
 
   logic        regfile_fp_a;
   logic        regfile_fp_b;
@@ -358,8 +370,8 @@ module cv32e41p_id_stage
   logic [1:0] regc_mux;
 
   logic [0:0] imm_a_mux_sel;
-  logic [3:0] imm_b_mux_sel;
-  logic [1:0] ctrl_transfer_target_mux_sel;
+  logic [4:0] imm_b_mux_sel;
+  logic [2:0] ctrl_transfer_target_mux_sel;
 
   // Multiplier Control
   mul_opcode_e mult_operator;  // multiplication operation selection
@@ -486,26 +498,42 @@ module cv32e41p_id_stage
 
 
   // immediate extraction and sign extension
-  assign imm_i_type = {{20{instr[31]}}, instr[31:20]};
-  assign imm_iz_type = {20'b0, instr[31:20]};
-  assign imm_s_type = {{20{instr[31]}}, instr[31:25], instr[11:7]};
-  assign imm_sb_type = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
-  assign imm_u_type = {instr[31:12], 12'b0};
-  assign imm_uj_type = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+  assign imm_i_type = {{20{instr[31]}}, instr[31:20]}; // Used as a jump target, need fixing !
+  assign imm_s_type = {{20{instr[31]}}, instr[31:25], instr[11:7]}; // Used for stores, need to be fixed !
+  assign imm_sb_type = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0}; // Used for store byte, need to be fixed 
+  assign imm_u_type = {instr[31:12], 12'b0}; // Used for load upper immediat, need to be fixed ! 
+  assign imm_uj_type = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0}; // Used for JUMP target for JALR need to be fixed ! 
 
-  // immediate for CSR manipulatin (zero extended)
+  assign imm_cjal_type    = { {20{instr[12]}},instr[12:12],instr[8:8],instr[10:9],instr[6:6],instr[7:7],instr[2:2],instr[11:11],instr[5:3],1'b0 };
+  assign imm_cspn_type    = { 22'b0,instr[10:7],instr[12:11],instr[5],instr[6],2'b0 };
+  assign imm_cfldsp_type  = {22'b0,instr[4:2],instr[12],instr[6:5],3'b0};
+  assign imm_caddi_type   = { {22{instr[12]}},instr[12:12],instr[4:3],instr[5:5],instr[2:2],instr[6:6],4'b0 };
+  assign imm_clwsp_type   = { 24'b0,instr[3:2],instr[12:12],instr[6:4],2'b0};
+  assign imm_cld_type     = {24'b0,instr[6:5],instr[12:10],3'b0 };
+  assign imm_cswsp_type   = { 24'b0,instr[8:7],instr[12:9],2'b0 };
+  assign imm_fsdp_type    = { 24'b0,instr[9:7],instr[12:10],2'b0 };
+  assign imm_clw_type     = {25'b0,instr[5],instr[12:10],instr[6],2'b0 };
+  assign imm_csrli_type   = { 26'b0,instr[12:12],instr[6:2] };
+  assign imm_candi_type   = { {26{instr[12]}},instr[12:12],instr[6:2] };
+  assign imm_cbeq_type    = { {23{instr[12]}},instr[12:12],instr[6:5],instr[2:2],instr[11:10],instr[4:3],1'b0 };
+  assign imm_clui_type    = { {14{instr[12]}},instr[12:12],instr[6:2],12'b0 };
+
+  assign imm_iz_type      = {20'b0, instr[31:20]}; // Used for hw loop ?? we wont hit it but maybe need fixing ??
+
+  // immediate for CSR manipulatin (zero extended) Used only in 32 bit instructions ! 
   assign imm_z_type = {27'b0, instr[REG_S1_MSB:REG_S1_LSB]};
 
-  assign imm_s2_type = {27'b0, instr[24:20]};
-  assign imm_bi_type = {{27{instr[24]}}, instr[24:20]};
-  assign imm_s3_type = {27'b0, instr[29:25]};
-  assign imm_vs_type = {{26{instr[24]}}, instr[24:20], instr[25]};
-  assign imm_vu_type = {26'b0, instr[24:20], instr[25]};
+  assign imm_s2_type = {27'b0, instr[24:20]}; // Used only in 32 bit decoder !  PULP
+  assign imm_bi_type = {{27{instr[24]}}, instr[24:20]}; // Used only in 32 bit decoder ! PULP
+  assign imm_s3_type = {27'b0, instr[29:25]}; // Used only in 32 bit decoder ! PULP Bit mask ops ! 
+  assign imm_vs_type = {{26{instr[24]}}, instr[24:20], instr[25]}; // Used only in 32 bit decoder ! PULP
+  assign imm_vu_type = {26'b0, instr[24:20], instr[25]}; // Only in 32 bit decoder ! PULP
 
-  // same format as rS2 for shuffle needs, expands immediate
+  // same format as rS2 for shuffle needs, expands immediate Used only in 32 bit decoder ! PULP
   assign imm_shuffleb_type = {
     6'b0, instr[28:27], 6'b0, instr[24:23], 6'b0, instr[22:21], 6'b0, instr[20], instr[25]
   };
+  // Used only in 32 bit decoder for PULP
   assign imm_shuffleh_type = {15'h0, instr[20], 15'h0, instr[25]};
 
   // clipping immediate, uses a small barrel shifter to pre-process the
@@ -522,23 +550,23 @@ module cv32e41p_id_stage
   //---------------------------------------------------------------------------
   // source register selection regfile_fp_x=1 <=> CV32E40P_REG_x is a FP-register
   //---------------------------------------------------------------------------
-  assign regfile_addr_ra_id = {fregfile_ena & regfile_fp_a, instr[REG_S1_MSB:REG_S1_LSB]};
-  assign regfile_addr_rb_id = {fregfile_ena & regfile_fp_b, instr[REG_S2_MSB:REG_S2_LSB]};
+  assign regfile_addr_ra_id = {fregfile_ena & regfile_fp_a, addr_ra_id};
+  assign regfile_addr_rb_id = {fregfile_ena & regfile_fp_b, addr_rb_id};
 
   // register C mux
   always_comb begin
     unique case (regc_mux)
       REGC_ZERO: regfile_addr_rc_id = '0;
-      REGC_RD:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_D_MSB:REG_D_LSB]};
-      REGC_S1:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S1_MSB:REG_S1_LSB]};
-      REGC_S4:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S4_MSB:REG_S4_LSB]};
+      REGC_RD:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_D_MSB:REG_D_LSB]}; // Used only in 32bit decoder part so should be fine ! 
+      REGC_S1:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S1_MSB:REG_S1_LSB]}; //Not used at all
+      REGC_S4:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S4_MSB:REG_S4_LSB]}; // Used only in 32bit decoder part so should be fine ! 
     endcase
   end
 
   //---------------------------------------------------------------------------
   // destination registers regfile_fp_d=1 <=> REG_D is a FP-register
   //---------------------------------------------------------------------------
-  assign regfile_waddr_id = {fregfile_ena & regfile_fp_d, instr[REG_D_MSB:REG_D_LSB]};
+  assign regfile_waddr_id = {fregfile_ena & regfile_fp_d, decoder_waddr_id};
 
   // Second Register Write Address Selection
   // Used for prepost load/store and multiplier
@@ -579,9 +607,12 @@ module cv32e41p_id_stage
     unique case (ctrl_transfer_target_mux_sel)
       JT_JAL:  jump_target = pc_id_i + imm_uj_type;
       JT_COND: jump_target = pc_id_i + imm_sb_type;
+      JT_CJAL: jump_target = pc_id_i + imm_cjal_type;
+      JT_CCOND: jump_target = pc_id_i + imm_cbeq_type;
 
       // JALR: Cannot forward RS1, since the path is too long
       JT_JALR: jump_target = regfile_data_ra_id + imm_i_type;
+      JT_CJALR: jump_target = regfile_data_ra_id;
       default: jump_target = regfile_data_ra_id + imm_i_type;
     endcase
   end
@@ -644,7 +675,7 @@ module cv32e41p_id_stage
       IMMB_I:      imm_b = imm_i_type;
       IMMB_S:      imm_b = imm_s_type;
       IMMB_U:      imm_b = imm_u_type;
-      IMMB_PCINCR: imm_b = is_compressed_i ? 32'h2 : 32'h4;
+      IMMB_PCINCR: imm_b = is_compressed ? 32'h2 : 32'h4;
       IMMB_S2:     imm_b = imm_s2_type;
       IMMB_BI:     imm_b = imm_bi_type;
       IMMB_S3:     imm_b = imm_s3_type;
@@ -652,6 +683,18 @@ module cv32e41p_id_stage
       IMMB_VU:     imm_b = imm_vu_type;
       IMMB_SHUF:   imm_b = imm_shuffle_type;
       IMMB_CLIP:   imm_b = {1'b0, imm_clip_type[31:1]};
+      IMMB_CJAL:   imm_b = imm_cjal_type;
+      IMMB_CSPN:   imm_b = imm_cspn_type;
+      IMMB_CFLDSP: imm_b = imm_cfldsp_type;
+      IMMB_CADDI:  imm_b = imm_caddi_type;
+      IMMB_CLWSP:  imm_b = imm_clwsp_type;
+      IMMB_CLD:    imm_b = imm_cld_type;
+      IMMB_CSWSP:  imm_b = imm_cswsp_type;
+      IMMB_FSDP:   imm_b = imm_fsdp_type;
+      IMMB_CLW:    imm_b = imm_clw_type;
+      IMMB_CSRLI:  imm_b = imm_csrli_type;
+      IMMB_CANDI:  imm_b = imm_candi_type;
+      IMMB_CLUI:   imm_b = imm_clui_type;
       default:     imm_b = imm_i_type;
     endcase
   end
@@ -947,8 +990,12 @@ module cv32e41p_id_stage
   //                                           //
   ///////////////////////////////////////////////
 
-  cv32e41p_decoder #(
+  cv32e41p_merged_decoder #(
       .PULP_XPULP      (PULP_XPULP),
+      .Zcea            (Zcea),
+      .Zceb            (Zceb),
+      .Zcec            (Zcec),
+      .Zcee            (Zcee),
       .PULP_CLUSTER    (PULP_CLUSTER),
       .A_EXTENSION     (A_EXTENSION),
       .FPU             (FPU),
@@ -992,7 +1039,10 @@ module cv32e41p_id_stage
 
       // from IF/ID pipeline
       .instr_rdata_i   (instr),
-      .illegal_c_insn_i(illegal_c_insn_i),
+
+      // Compressed decoder output
+      .is_compressed_o(is_compressed),
+      .illegal_c_insn_o(illegal_c_insn),
 
       // ALU signals
       .alu_en_o              (alu_en),
@@ -1067,6 +1117,10 @@ module cv32e41p_id_stage
       .ctrl_transfer_insn_in_id_o    (ctrl_transfer_insn_in_id),
       .ctrl_transfer_target_mux_sel_o(ctrl_transfer_target_mux_sel),
 
+
+      .addr_ra_id_o(addr_ra_id),
+      .addr_rb_id_o(addr_rb_id),
+      .waddr_id_o  (decoder_waddr_id),
       // HPM related control signals
       .mcounteren_i(mcounteren_i)
 
@@ -1131,7 +1185,7 @@ module cv32e41p_id_stage
 
       // HWLoop signls
       .pc_id_i        (pc_id_i),
-      .is_compressed_i(is_compressed_i),
+      .is_compressed_i(is_compressed),
 
       .hwlp_start_addr_i(hwlp_start_o),
       .hwlp_end_addr_i  (hwlp_end_o),
@@ -1635,7 +1689,7 @@ module cv32e41p_id_stage
       mhpmevent_store_o <= minstret && data_req_id && data_we_id;
       mhpmevent_jump_o           <= minstret && ((ctrl_transfer_insn_in_id == BRANCH_JAL) || (ctrl_transfer_insn_in_id == BRANCH_JALR));
       mhpmevent_branch_o <= minstret && (ctrl_transfer_insn_in_id == BRANCH_COND);
-      mhpmevent_compressed_o <= minstret && is_compressed_i;
+      mhpmevent_compressed_o <= minstret && is_compressed;
       // EX stage count
       mhpmevent_branch_taken_o <= mhpmevent_branch_o && branch_decision_i;
       // IF stage count
@@ -1679,7 +1733,7 @@ module cv32e41p_id_stage
 
   // the instruction delivered to the ID stage should always be valid
   a_valid_instr :
-  assert property (@(posedge clk) (instr_valid_i & (~illegal_c_insn_i)) |-> (!$isunknown(instr)))
+  assert property (@(posedge clk) (instr_valid_i & (~illegal_c_insn)) |-> (!$isunknown(instr)))
   else $warning("%t, Instruction is valid, but has at least one X", $time);
 
   // Check that instruction after taken branch is flushed (more should actually be flushed, but that is not checked here)

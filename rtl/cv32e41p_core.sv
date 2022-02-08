@@ -34,6 +34,10 @@ module cv32e41p_core
     parameter PULP_XPULP          =  0,                   // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. p.elw)
     parameter PULP_CLUSTER = 0,  // PULP Cluster interface (incl. p.elw)
     parameter FPU = 0,  // Floating Point Unit (interfaced via APU interface)
+    parameter Zcea = 0, // 
+    parameter Zceb = 0, // 
+    parameter Zcec = 0, // 
+    parameter Zcee = 0, // 
     parameter PULP_ZFINX = 0,  // Float-in-General Purpose registers
     parameter NUM_MHPMCOUNTERS = 1
 ) (
@@ -128,8 +132,6 @@ module cv32e41p_core
   // IF/ID signals
   logic        instr_valid_id;
   logic [31:0] instr_rdata_id;  // Instruction sampled inside IF stage
-  logic        is_compressed_id;
-  logic        illegal_c_insn_id;
   logic        is_fetch_failed_id;
 
   logic        clear_instr_valid;
@@ -424,7 +426,11 @@ module cv32e41p_core
       .PULP_XPULP (PULP_XPULP),
       .PULP_OBI   (PULP_OBI),
       .PULP_SECURE(PULP_SECURE),
-      .FPU        (FPU)
+      .FPU        (FPU),
+      .Zcea       (Zcea),
+      .Zceb       (Zceb),
+      .Zcec       (Zcec),
+      .Zcee       (Zcee)
   ) if_stage_i (
       .clk  (clk),
       .rst_n(rst_ni),
@@ -474,8 +480,6 @@ module cv32e41p_core
       .pc_id_o(pc_id),
       .pc_if_o(pc_if),
 
-      .is_compressed_id_o (is_compressed_id),
-      .illegal_c_insn_id_o(illegal_c_insn_id),
 
       .m_exc_vec_pc_mux_i(m_exc_vec_pc_mux_id),
       .u_exc_vec_pc_mux_i(u_exc_vec_pc_mux_id),
@@ -510,6 +514,10 @@ module cv32e41p_core
   /////////////////////////////////////////////////
   cv32e41p_id_stage #(
       .PULP_XPULP      (PULP_XPULP),
+      .Zcea            (Zcea),
+      .Zceb            (Zceb),
+      .Zcec            (Zcec),
+      .Zcee            (Zcee),
       .PULP_CLUSTER    (PULP_CLUSTER),
       .N_HWLP          (N_HWLP),
       .PULP_SECURE     (PULP_SECURE),
@@ -556,9 +564,6 @@ module cv32e41p_core
       .is_fetch_failed_i(is_fetch_failed_id),
 
       .pc_id_i(pc_id),
-
-      .is_compressed_i (is_compressed_id),
-      .illegal_c_insn_i(illegal_c_insn_id),
 
       // Stalls
       .halt_if_o(halt_if),
@@ -1137,7 +1142,7 @@ module cv32e41p_core
   always_ff @(posedge rst_ni) begin
     if (PULP_XPULP) begin
       $warning(
-          "PULP_XPULP == 1 has not been verified yet and non-backward compatible RTL fixes are expected (see https://github.com/openhwgroup/cv32e41p/issues/452)");
+          "PULP_XPULP == 1 has not been verified yet and non-backward compatible RTL fixes are expected (see https://github.com/openhwgroup/cv32e40p/issues/452)");
     end
     if (PULP_CLUSTER) begin
       $warning("PULP_CLUSTER == 1 has not been verified yet");
