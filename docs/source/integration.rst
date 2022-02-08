@@ -33,7 +33,11 @@ Instantiation Template
       .NUM_MHPMCOUNTERS         ( 1 ),
       .PULP_CLUSTER             ( 0 ),
       .PULP_XPULP               ( 0 ),
-      .PULP_ZFINX               ( 0 )
+      .ZFINX                    ( 0 )
+      .Zcea                     ( 0 ) //FIXME these will change names
+      .Zceb                     ( 0 ) //when moving to v0.70 
+      .Zcec                     ( 0 )
+      .Zcee                     ( 0 )
   ) u_core (
       // Clock and reset
       .clk_i                    (),
@@ -95,7 +99,7 @@ Parameters
 ----------
 
 .. note::
-   The non-default (i.e. non-zero) settings of ``FPU``, ``PULP_CLUSTER``, ``PULP_XPULP`` and ``PULP_ZFINX`` have not
+   The non-default (i.e. non-zero) settings of ``FPU``, ``PULP_CLUSTER``, ``PULP_XPULP`` and ``ZFINX`` have not
    been verified yet. The default parameter value for ``PULP_XPULP`` will be changed to 1 once it has been verified.
    The default configuration reflected below is currently under verification and this verification effort will be
    completed first.
@@ -124,10 +128,18 @@ Parameters
 |                              |             |            | (see :ref:`corev_hardware_loop`).                                |
 |                              |             |            |                                                                  |
 +------------------------------+-------------+------------+------------------------------------------------------------------+
-| ``PULP_ZFINX``               | bit         | 0          | Enable Floating Point instructions to use the General Purpose    |
+| ``ZFINX``                    | bit         | 0          | Enable Floating Point instructions to use the General Purpose    |
 |                              |             |            | register file instead of requiring a dedicated Floating Point    |
 |                              |             |            | register file, see :ref:`fpu`. Only allowed to be set to 1       |
 |                              |             |            | if ``FPU`` = 1                                                   |
++------------------------------+-------------+------------+------------------------------------------------------------------+
+| ``Zcea``                     | bit         | 0          | Enable all Zcea instruction from Zce v0.50.1                     |
++------------------------------+-------------+------------+------------------------------------------------------------------+
+| ``Zceb``                     | bit         | 0          | Enable all Zceb instruction from Zce v0.50.1                     |
++------------------------------+-------------+------------+------------------------------------------------------------------+
+| ``Zcec``                     | bit         | 0          | Enable all Zcec instruction from Zce v0.50.1                     |
++------------------------------+-------------+------------+------------------------------------------------------------------+
+| ``Zcee``                     | bit         | 0          | Enable all Zcee instruction from Zce v0.50.1                     |
 +------------------------------+-------------+------------+------------------------------------------------------------------+
 
 Interfaces
