@@ -59,7 +59,7 @@ It follows these specifications:
   CV32E41P implements the Machine ISA version 1.11.
 * `RISC-V External Debug Support, version 0.13.2 <https://content.riscv.org/wp-content/uploads/2019/03/riscv-debug-release.pdf>`_
 
-Many features in the RISC-V specification are optional, and CV32E41P can be parametrized to enable or disable some of them.
+Many features in the RISC-V specification are optional, and CV32E41P can be parameterized to enable or disable some of them.
 
 CV32E41P supports the following base instruction set.
 
@@ -94,9 +94,13 @@ In addition, the following standard instruction set extensions are available.
      - 2.0
      - always enabled
 
-   * - **F**: Single-Precision Floating-Point
+   * - **F**: Single-Precision Floating-Point using F registers
      - 2.2
-     - optionally enabled based on ``FPU`` parameter
+     - optionally enabled with the ``FPU`` parameter
+
+   * - **Zfinx**: Single-Precision Floating-Point using X registers
+     - 1.0
+     - optionally enabled with the ``ZFINX`` parameter (also requires the ``FPU`` parameter)
 
 The following custom instruction set extensions are available.
 
@@ -109,22 +113,18 @@ The following custom instruction set extensions are available.
 
    * - **Xcorev**: CORE-V ISA Extensions (excluding **cv.elw**)
      - 1.0
-     - optionally enabled based on ``PULP_XPULP`` parameter
+     - optionally enabled with the ``PULP_XPULP`` parameter
 
    * - **Xpulpcluster**: PULP Cluster Extension
      - 1.0
-     - optionally enabled based on ``PULP_CLUSTER`` parameter
-
-   * - **Xpulpzfinx**: PULP Share Integer (X) Registers with Floating Point (F) Register Extension
-     - 1.0
-     - optionally enabled based on ``PULP_ZFINX`` parameter
+     - optionally enabled with the ``PULP_CLUSTER`` parameter
 
 Most content of the RISC-V privileged specification is optional.
 CV32E41P currently supports the following features according to the RISC-V Privileged Specification, version 1.11.
 
 * M-Mode
 * All CSRs listed in :ref:`cs-registers`
-* Hardware Performance Counters as described in :ref:`performance-counters` based on ``NUM_MHPMCOUNTERS`` parameter
+* Hardware Performance Counters as described in :ref:`performance-counters` controlled by the ``NUM_MHPMCOUNTERS`` parameter
 * Trap handling supporting direct mode or vectored mode as described at :ref:`exceptions-interrupts`
 
 
@@ -159,9 +159,10 @@ be provided.
 FPGA Synthesis
 ^^^^^^^^^^^^^^^
 
-FPGA synthesis is supported for CV32E41P when the flip-flop based register
-file is used. Since latches are not well supported on FPGAs, it is
-crucial to select the flip-flop based register file. The user needs to provide
+FPGA synthesis is only supported for CV32E41P when the flip-flop based register
+file is used as latches are not well supported on FPGAs. 
+
+The user needs to provide
 a technology specific implementation of a clock gating cell as described
 in :ref:`clock-gating-cell`.
 
@@ -172,70 +173,6 @@ The verification environment (testbenches, testcases, etc.) for the CV32E41P
 core can be found at  `core-v-verif <https://github.com/openhwgroup/core-v-verif>`_.
 It is recommended that you start by reviewing the
 `CORE-V Verification Strategy <https://core-v-docs-verif-strat.readthedocs.io/en/latest/>`_.
-
-In early 2021 the CV32E41P achieved Functional RTL Freeze, meaning that is has
-been fully verified as per its
-`Verification Plan <https://github.com/openhwgroup/core-v-docs/blob/master/verif/CV32E41P/README.md>`_.
-The top-level `README in core-v-verif <https://github.com/openhwgroup/core-v-verif#cv32e41p-coverage-data>`_
-has a link to the final functional, code and test coverage reports.
-
-The unofficial start date for the CV32E41P verification effort is 2020-02-27,
-which is the date the core-v-verif environment "went live".  Between then and
-RTL Freeze, a total of 47 RTL issues and 38 User Manual issues were identified
-and resolved [1]_.  A breakdown of the RTL issues is as follows:
-
-.. table:: How RTL Issues Were Found
-  :name: How RTL Issues Were Found
-
-  +---------------------+-------+----------------------------------------------------+
-  | "Found By"          | Count | Note                                               |
-  +=====================+=======+====================================================+
-  | Simulation          | 18    | See classification below                           |
-  +---------------------+-------+----------------------------------------------------+
-  | Inspection          | 13    | Human review of the RTL                            |
-  +---------------------+-------+----------------------------------------------------+
-  | Formal Verification | 13    | This includes both Designer and Verifier use of FV |
-  +---------------------+-------+----------------------------------------------------+
-  | Lint                |  2    |                                                    |
-  +---------------------+-------+----------------------------------------------------+
-  | Unknown             |  1    |                                                    |
-  +---------------------+-------+----------------------------------------------------+
-
-A classification of the simulation issues by method used to identify them is informative:
-
-.. table:: Breakdown of Issues found by Simulation
-  :name: Breakdown of Issues found by Simulation
-
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Simulation Method            | Count | Note                                                                                   |
-  +==============================+=======+========================================================================================+
-  | Directed, self-checking test | 10    | Many test supplied by Design team and a couple from the Open Source Community at large |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Step & Compare               |  6    | Issues directly attributed to S&C against ISS                                          |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Constrained-Random           |  2    | Test generated by corev-dv (extension of riscv-dv)                                     |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-
-A classification of the issues themselves:
-
-.. table:: Issue Classification
-  :name: Issue Classification
-
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Issue Type                   | Count | Note                                                                                   |
-  +==============================+=======+========================================================================================+
-  | RTL Functional               | 40    | A bug!                                                                                 |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | RTL coding style             |  4    | Linter issues, removing TODOs, removing `ifdefs, etc.                                  |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Non-RTL functional           |  1    | Issue related to behavioral tracer (not part of the core)                              |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Unreproducible               |  1    |                                                                                        |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-  | Invalid                      |  1    |                                                                                        |
-  +------------------------------+-------+----------------------------------------------------------------------------------------+
-
-Additional details are available as part of the `CV32E41P v1.0.0 Report <https://github.com/openhwgroup/core-v-docs/tree/master/program/milestones/CV32E41P/RTL_Freeze_v1.0.0>`_.
 
 Contents
 --------
@@ -257,89 +194,3 @@ Contents
  * :ref:`custom-isa-extensions` describes the custom instruction set extensions.
  * :ref:`glossary` provides definitions of used terminology.
 
-History
--------
-
-CV32E41P started its life as a fork of the OR10N CPU core based on the OpenRISC ISA. Then, under the name of RI5CY, it became a RISC-V core (2016), and it has been maintained by the PULP platform <https://pulp-platform.org> team until February 2020, when it has been contributed to OpenHW Group https://www.openhwgroup.org>.
-
-As RI5CY has been used in several projects, a list of all the changes made by OpenHW Group since February 2020 follows:
-
-Memory-Protocol
-^^^^^^^^^^^^^^^
-
-The Instruction and Data memory interfaces are now compliant with the OBI protocol (see https://github.com/openhwgroup/core-v-docs/blob/master/cores/obi/OBI-v1.2.pdf).
-Such memory interface is slightly different from the one used by RI5CY as: the grant signal can now be kept high by the bus even without the core raising a request; and the request signal does not depend anymore on the rvalid signal (no combinatorial dependency). The OBI is easier to be interfaced to the AMBA AXI and AHB protocols and improves timing as it removes rvalid->req dependency. Also, the protocol forces the address stability. Thus, the core can not retract memory requests once issued, nor can it change the issued address (as was the case for the RI5CY instruction memory interface).
-
-RV32F Extensions
-^^^^^^^^^^^^^^^^
-
-The FPU is not instantiated in the core EX stage anymore, and it must be attached to the APU interface.
-Previously, RI5CY could select with a parameter whether the FPU was instantiated inside the EX stage or via the APU interface.
-
-RV32A Extensions, Security and Memory Protection
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-CV32E41P core does not support the RV32A (atomic) extensions, the U-mode, and the PMP anymore.
-Most of the previous RTL descriptions of these features have been kept but not maintained. The RTL code has been partially kept to allow previous users of these features to develop their own by reusing previously developed RI5CY modules.
-
-CSR Address Re-Mapping
-^^^^^^^^^^^^^^^^^^^^^^
-
-CV32E41P is fully compliant with RISC-V.
-RI5CY used to have custom performance counters 32b wide (not compliant with RISC-V) in the CSR address space
-{0x7A0, 0x7A1, 0x780-0x79F}. CV32E41P is fully compliant with the RISC-V spec.
-The custom PULP HWLoop CSRs moved from the 0x7C* to RISC-V user custom space 0x80* address space.
-
-Interrupts
-^^^^^^^^^^
-
-RI5CY used to have a req plus a 5bits ID interrupt interface, supporting up to 32 interrupt requests (only one active at a time), with the priority defined outside in an interrupt controller. CV32E41P is now compliant with the CLINT RISC-V spec, extended with 16 custom interrupts lines called fast, for a total of 19 interrupt lines. They can be all active simultaneously, and priority and per-request interrupt enable bit is controlled by the core CLINT definition.
-
-PULP HWLoop Spec
-^^^^^^^^^^^^^^^^
-
-RI5CY supported two nested HWLoops. Every loop had a minimum of two instructions. The start and end of the loop addresses
-could be misaligned, and the instructions in the loop body could be of any kind. CV32E41P has a more restricted spec for the
-HWLoop (see  :ref:`hwloop-specs`).
-
-Compliancy, bug fixing, code clean-up, and documentation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The CV32E41P has been verified. It is fully compliant with RISC-V (RI5CY was partially compliant). Many bugs have been fixed, and the RTL code cleaned-up. The documentation has been formatted with reStructuredText and has been developed following at industrial quality level.
-
-
-
-References
-----------
-
-1. `Gautschi, Michael, et al. "Near-Threshold RISC-V Core With DSP Extensions for Scalable IoT Endpoint Devices." in IEEE Transactions on Very Large Scale Integration (VLSI) Systems, vol. 25, no. 10, pp. 2700-2713, Oct. 2017 <https://ieeexplore.ieee.org/document/7864441>`_
-
-2. `Schiavone, Pasquale Davide, et al. "Slow and steady wins the race? A comparison of ultra-low-power RISC-V cores for Internet-of-Things applications." 27th International Symposium on Power and Timing Modeling, Optimization and Simulation (PATMOS 2017) <https://doi.org/10.1109/PATMOS.2017.8106976>`_
-
-Contributors
-------------
-
-| Andreas Traber
-  (`*atraber@iis.ee.ethz.ch* <mailto:atraber@iis.ee.ethz.ch>`__)
-
-Michael Gautschi
-(`*gautschi@iis.ee.ethz.ch* <mailto:gautschi@iis.ee.ethz.ch>`__)
-
-Pasquale Davide Schiavone
-(`*pschiavo@iis.ee.ethz.ch* <mailto:pschiavo@iis.ee.ethz.ch>`__)
-
-Arjan Bink (`*arjan.bink@silabs.com* <mailto:arjan.bink@silabs.com>`__)
-
-Paul Zavalney (`*paul.zavalney@silabs.com* <mailto:paul.zavalney@silabs.com>`__)
-
-| Micrel Lab and Multitherman Lab
-| University of Bologna, Italy
-
-| Integrated Systems Lab
-| ETH Zürich, Switzerland
-
-
-.. [1]
-   It is a testament on the quality of the work done by the PULP platform team
-   that it took a team of professonal verification engineers more than 9 months
-   to find all these issues.

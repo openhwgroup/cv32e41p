@@ -29,10 +29,10 @@ Pipeline Details
 CV32E41P has a 4-stage in-order completion pipeline, the 4 stages are:
 
 Instruction Fetch (IF)
-  Fetches instructions from memory via an aligning prefetch buffer, capable of fetching 1 instruction per cycle if the instruction side memory system allows. The IF stage also pre-decodes RVC instructions into RV32I base instructions. See :ref:`instruction-fetch` for details.
+  Fetches instructions from memory via an aligning prefetch buffer, capable of fetching 1 instruction per cycle if the instruction side memory system allows. See :ref:`instruction-fetch` for details.
 
 Instruction Decode (ID)
-  Decodes fetched instruction and performs required registerfile reads. Jumps are taken from the ID stage.
+  Decodes fetched instruction and performs required register file reads. Jumps are taken from the ID stage.
 
 Execute (EX)
   Executes the instructions. The EX stage contains the ALU, Multiplier and Divider. Branches (with their condition met) are taken from the EX stage. Multi-cycle instructions will stall this stage until they are complete. The ALU, Multiplier and Divider instructions write back their result to the register file from the EX stage. The address generation part of the load-store-unit (LSU) is contained in EX as well.
@@ -43,8 +43,8 @@ Writeback (WB)
 Multi- and Single-Cycle Instructions
 ------------------------------------
 
-:numref:`Cycle counts per instruction type` shows the cycle count per instruction type. Some instructions have a variable time, this is indicated as a range e.g. 1..32 means
-that the instruction takes a minimum of 1 cycle and a maximum of 32 cycles. The cycle counts assume zero stall on the instruction-side interface
+:numref:`Cycle counts per instruction type` shows the cycle count per instruction type. Some instructions have a variable time, this is indicated as a range e.g. 3..35 means
+that the instruction takes a minimum of 3 cycles and a maximum of 35 cycles. The cycle counts assume zero stall on the instruction-side interface
 and zero stall on the data-side memory interface.
 
 .. table:: Cycle counts per instruction type
