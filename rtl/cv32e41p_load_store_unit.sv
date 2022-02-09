@@ -487,7 +487,7 @@ module cv32e41p_load_store_unit #(
   // Assertions
   //////////////////////////////////////////////////////////////////////////////
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   // External data bus errors are not supported yet. PMP errors are not supported yet.
   // 

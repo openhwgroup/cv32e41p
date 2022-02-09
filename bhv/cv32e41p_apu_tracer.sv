@@ -35,7 +35,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-`ifdef CV32E40P_APU_TRACE
+`ifdef CV32E41P_APU_TRACE
 
 module cv32e41p_apu_tracer (
     input logic        clk_i,
@@ -76,4 +76,4 @@ module cv32e41p_apu_tracer (
 
 endmodule  // cv32e41p_apu_tracer
 
-`endif  // CV32E40P_APU_TRACE
+`endif  // CV32E41P_APU_TRACE

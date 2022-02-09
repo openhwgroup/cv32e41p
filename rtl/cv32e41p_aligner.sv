@@ -237,7 +237,7 @@ module cv32e41p_aligner (
   // Assertions
   //////////////////////////////////////////////////////////////////////////////
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   // Hardware Loop check
   property p_hwlp_update_pc;

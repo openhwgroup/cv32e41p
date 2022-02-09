@@ -11,17 +11,17 @@
 // Wrapper for a cv32e41p, containing cv32e41p, and tracer
 // Contributor: Davide Schiavone <davide@openhwgroup.org>
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 `include "cv32e41p_prefetch_controller_sva.sv"
 `endif
 
 `include "cv32e41p_core_log.sv"
 
-`ifdef CV32E40P_APU_TRACE
+`ifdef CV32E41P_APU_TRACE
 `include "cv32e41p_apu_tracer.sv"
 `endif
 
-`ifdef CV32E40P_TRACE_EXECUTION
+`ifdef CV32E41P_TRACE_EXECUTION
 `include "cv32e41p_tracer.sv"
 `endif
 
@@ -94,7 +94,7 @@ module cv32e41p_wrapper
     output logic core_sleep_o
 );
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   // RTL Assertions
   bind cv32e41p_prefetch_controller:
@@ -107,7 +107,7 @@ module cv32e41p_wrapper
       .FIFO_ADDR_DEPTH(FIFO_ADDR_DEPTH)
   ) prefetch_controller_sva (.*);
 
-`endif  // CV32E40P_ASSERT_ON
+`endif  // CV32E41P_ASSERT_ON
 
   cv32e41p_core_log #(
       .PULP_XPULP      (PULP_XPULP),
@@ -123,7 +123,7 @@ module cv32e41p_wrapper
       .pc_id_i           (core_i.pc_id)
   );
 
-`ifdef CV32E40P_APU_TRACE
+`ifdef CV32E41P_APU_TRACE
   cv32e41p_apu_tracer apu_tracer_i (
       .clk_i       (core_i.rst_ni),
       .rst_n       (core_i.clk_i),
@@ -134,7 +134,7 @@ module cv32e41p_wrapper
   );
 `endif
 
-`ifdef CV32E40P_TRACE_EXECUTION
+`ifdef CV32E41P_TRACE_EXECUTION
   cv32e41p_tracer tracer_i (
       .clk_i(core_i.clk_i),  // always-running clock for tracing
       .rst_n(core_i.rst_ni),

@@ -354,7 +354,7 @@ module cv32e41p_mult
   //----------------------------------------------------------------------------
 
   // check multiplication result for mulh
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
   assert property (
     @(posedge clk) ((mulh_CS == FINISH) && (operator_i == MUL_H) && (short_signed_i == 2'b11))
     |->

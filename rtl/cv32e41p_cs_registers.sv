@@ -1571,7 +1571,7 @@ module cv32e41p_cs_registers
     end
   endgenerate
 
-`ifdef CV32E40P_ASSERT_ON
+`ifdef CV32E41P_ASSERT_ON
 
   //----------------------------------------------------------------------------
   // Assertions
