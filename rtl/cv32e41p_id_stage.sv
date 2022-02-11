@@ -324,7 +324,7 @@ module cv32e41p_id_stage
   logic [31:0] imm_candi_type;
   logic [31:0] imm_cbeq_type;
   logic [31:0] imm_clui_type;
-  
+
   logic [31:0] imm_a;  // contains the immediate for operand b
   logic [31:0] imm_b;  // contains the immediate for operand b
 
@@ -498,11 +498,11 @@ module cv32e41p_id_stage
 
 
   // immediate extraction and sign extension
-  assign imm_i_type = {{20{instr[31]}}, instr[31:20]}; // Used as a jump target, need fixing !
-  assign imm_s_type = {{20{instr[31]}}, instr[31:25], instr[11:7]}; // Used for stores, need to be fixed !
-  assign imm_sb_type = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0}; // Used for store byte, need to be fixed 
-  assign imm_u_type = {instr[31:12], 12'b0}; // Used for load upper immediat, need to be fixed ! 
-  assign imm_uj_type = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0}; // Used for JUMP target for JALR need to be fixed ! 
+  assign imm_i_type = {{20{instr[31]}}, instr[31:20]};
+  assign imm_s_type = {{20{instr[31]}}, instr[31:25], instr[11:7]};
+  assign imm_sb_type = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
+  assign imm_u_type = {instr[31:12], 12'b0};
+  assign imm_uj_type = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
 
   assign imm_cjal_type    = { {20{instr[12]}},instr[12:12],instr[8:8],instr[10:9],instr[6:6],instr[7:7],instr[2:2],instr[11:11],instr[5:3],1'b0 };
   assign imm_cspn_type    = { 22'b0,instr[10:7],instr[12:11],instr[5],instr[6],2'b0 };
@@ -518,22 +518,21 @@ module cv32e41p_id_stage
   assign imm_cbeq_type    = { {23{instr[12]}},instr[12:12],instr[6:5],instr[2:2],instr[11:10],instr[4:3],1'b0 };
   assign imm_clui_type    = { {14{instr[12]}},instr[12:12],instr[6:2],12'b0 };
 
-  assign imm_iz_type      = {20'b0, instr[31:20]}; // Used for hw loop ?? we wont hit it but maybe need fixing ??
+  assign imm_iz_type      = {20'b0, instr[31:20]};
 
-  // immediate for CSR manipulatin (zero extended) Used only in 32 bit instructions ! 
+  // immediate for CSR manipulatin (zero extended) Used only in 32 bit instructions !
   assign imm_z_type = {27'b0, instr[REG_S1_MSB:REG_S1_LSB]};
 
-  assign imm_s2_type = {27'b0, instr[24:20]}; // Used only in 32 bit decoder !  PULP
-  assign imm_bi_type = {{27{instr[24]}}, instr[24:20]}; // Used only in 32 bit decoder ! PULP
-  assign imm_s3_type = {27'b0, instr[29:25]}; // Used only in 32 bit decoder ! PULP Bit mask ops ! 
-  assign imm_vs_type = {{26{instr[24]}}, instr[24:20], instr[25]}; // Used only in 32 bit decoder ! PULP
-  assign imm_vu_type = {26'b0, instr[24:20], instr[25]}; // Only in 32 bit decoder ! PULP
-
-  // same format as rS2 for shuffle needs, expands immediate Used only in 32 bit decoder ! PULP
+  // PULP Immediate formats
+  assign imm_s2_type = {27'b0, instr[24:20]};
+  assign imm_bi_type = {{27{instr[24]}}, instr[24:20]};
+  assign imm_s3_type = {27'b0, instr[29:25]};
+  assign imm_vs_type = {{26{instr[24]}}, instr[24:20], instr[25]};
+  assign imm_vu_type = {26'b0, instr[24:20], instr[25]};
+  // same format as rS2 for shuffle needs, expands immediate
   assign imm_shuffleb_type = {
     6'b0, instr[28:27], 6'b0, instr[24:23], 6'b0, instr[22:21], 6'b0, instr[20], instr[25]
   };
-  // Used only in 32 bit decoder for PULP
   assign imm_shuffleh_type = {15'h0, instr[20], 15'h0, instr[25]};
 
   // clipping immediate, uses a small barrel shifter to pre-process the
@@ -557,9 +556,9 @@ module cv32e41p_id_stage
   always_comb begin
     unique case (regc_mux)
       REGC_ZERO: regfile_addr_rc_id = '0;
-      REGC_RD:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_D_MSB:REG_D_LSB]}; // Used only in 32bit decoder part so should be fine ! 
-      REGC_S1:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S1_MSB:REG_S1_LSB]}; //Not used at all
-      REGC_S4:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S4_MSB:REG_S4_LSB]}; // Used only in 32bit decoder part so should be fine ! 
+      REGC_RD:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_D_MSB:REG_D_LSB]};
+      REGC_S1:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S1_MSB:REG_S1_LSB]};
+      REGC_S4:   regfile_addr_rc_id = {fregfile_ena & regfile_fp_c, instr[REG_S4_MSB:REG_S4_LSB]};
     endcase
   end
 

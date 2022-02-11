@@ -157,7 +157,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
   output logic [2:0]  ctrl_transfer_target_mux_sel_o,        // jump target selection
 
 
-  //Registers specifiers 
+  //Registers specifiers
   output logic [4:0] addr_ra_id_o,
   output logic [4:0] addr_rb_id_o,
   output logic [4:0] waddr_id_o,
@@ -306,7 +306,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
 
     // 32 bit instruction
     if (instr_rdata_i[1:0] == 2'b11) begin
-        
+
         addr_ra_id_o = instr_rdata_i[REG_S1_MSB:REG_S1_LSB];
         addr_rb_id_o = instr_rdata_i[REG_S2_MSB:REG_S2_LSB];
         waddr_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
@@ -2632,11 +2632,11 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
           default: begin
             illegal_insn_o = 1'b1;
           end
-        
+
         endcase
     end
       else if (is_compressed_o)
-      // Compressed decoder ! 
+      // Compressed decoder !
         illegal_c_insn_o = 1'b0;
         unique case (instr_rdata_i[1:0])
           // C0
@@ -2644,9 +2644,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
             unique case (instr_rdata_i[15:13])
             // c.addi4spn -> addi rd', x2, imm
               3'b000: begin
-                // FIXME Likely need to change the Immediate format and fix register to SP
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                // IMMEDIATE { 22'b0,instr[10:7],instr[12:11],instr[5],instr[6],2'b0 }
                 imm_b_mux_sel_o     = IMMB_CSPN;
                 addr_ra_id_o        = 5'd2;
                 waddr_id_o          = {2'b01,instr_rdata_i[4:2]};
@@ -2663,8 +2661,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   reg_fp_d_o          = 1'b1;
                   rega_used_o         = 1'b1;
                   alu_operator_o      = ALU_ADD;
-                  // offset from immediate
-                  // IMMEDIATE {24'b0,instr[6:5],instr[12:10],3'b0 }
                   imm_b_mux_sel_o     = IMMB_CLD;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
@@ -2673,7 +2669,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   // NaN boxing
                   data_sign_extension_o = 2'b10;
                   // The orginal decoder mapped into 32bit loads, 64bit loads unsupported
-                  data_type_o = 2'b00; 
+                  data_type_o = 2'b00;
                 end
                 else
                   illegal_c_insn_o = 1'b1;
@@ -2687,7 +2683,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                 // offset from immediate
                 alu_operator_o      = ALU_ADD;
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                // IMMEDIATE {25'b0,instr[5],instr[12:10],instr[6],2'b0 }
                 imm_b_mux_sel_o     = IMMB_CLW;
 
                 waddr_id_o        = {2'b01,instr_rdata_i[4:2]};
@@ -2705,8 +2700,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   reg_fp_d_o          = 1'b1;
                   rega_used_o         = 1'b1;
                   alu_operator_o      = ALU_ADD;
-                  // offset from immediate
-                  // IMMEDIATE {25'b0,instr[5],instr[12:10],instr[6],2'b0 }
                   imm_b_mux_sel_o     = IMMB_CLW;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
@@ -2715,7 +2708,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   // NaN boxing
                   data_sign_extension_o = 2'b10;
                   // The orginal decoder mapped into 32bit loads, 64bit loads unsupported
-                  data_type_o = 2'b00; 
+                  data_type_o = 2'b00;
                 end
                 else
                   illegal_c_insn_o = 1'b1;
@@ -2729,8 +2722,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   regb_used_o         = 1'b1;
                   alu_operator_o      = ALU_ADD;
                   reg_fp_b_o          = 1'b1;
-                  // offset from immediate
-                  // IMMEDIATE {24'b0,instr[6:5],instr[12:10],3'b0 }
                   imm_b_mux_sel_o     = IMMB_CLD;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
@@ -2749,14 +2740,11 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                 rega_used_o    = 1'b1;
                 regb_used_o    = 1'b1;
                 alu_operator_o = ALU_ADD;
-                // pass write data through ALU operand c
                 alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
                 data_type_o = 2'b00; // SW
-                // offset from immediate
-                // IMMEDIATE {25'b0,instr[5],instr[12:10],instr[6],2'b0 }
                 imm_b_mux_sel_o     = IMMB_CLW;
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                
+
                 addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
                 addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
 
@@ -2770,8 +2758,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   regb_used_o         = 1'b1;
                   alu_operator_o      = ALU_ADD;
                   reg_fp_b_o          = 1'b1;
-                  // offset from immediate
-                  // IMMEDIATE {25'b0,instr[5],instr[12:10],instr[6],2'b0 }
                   imm_b_mux_sel_o     = IMMB_CLW;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
@@ -2785,7 +2771,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   illegal_c_insn_o = 1'b1;
               end
               default: begin
-                // TODO temp like this to make it match 
                 illegal_c_insn_o = 1'b1;
               end
             endcase
@@ -2798,7 +2783,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                 // c.addi -> addi rd, rd, nzimm
                 // c.nop
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                // IMMEDIATE { {26{instr[12]}},instr[12:12],instr[6:2] }
                 imm_b_mux_sel_o     = IMMB_CANDI;
                 regfile_alu_we      = 1'b1;
                 rega_used_o         = 1'b1;
@@ -2816,7 +2800,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                 // Calculate and store PC+4
                 alu_op_a_mux_sel_o  = OP_A_CURRPC;
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                // IMMEDIATE { {20{instr[12]}},instr[12:12],instr[8:8],instr[10:9],instr[6:6],instr[7:7],instr[2:2],instr[11:11],instr[5:3],1'b0 }
                 imm_b_mux_sel_o     = IMMB_PCINCR;
                 alu_operator_o      = ALU_ADD;
                 regfile_alu_we      = 1'b1;
@@ -2842,14 +2825,13 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   if (instr_rdata_i[11:7] == 5'h02) begin
                     // c.addi16sp -> addi x2, x2, nzimm
                     alu_op_b_mux_sel_o  = OP_B_IMM;
-                    // IMMEDIATE { {22{instr[12]}},instr[12:12],instr[4:3],instr[5:5],instr[2:2],instr[6:6],4'b0 },
                     imm_b_mux_sel_o     = IMMB_CADDI;
                     regfile_alu_we      = 1'b1;
                     rega_used_o         = 1'b1;
                     waddr_id_o          = 5'd2;
                     addr_ra_id_o        = 5'd2;
                     alu_operator_o = ALU_ADD;
-  
+
                   end else if (instr_rdata_i[11:7] == 5'b0) begin
                     // Hint -> lui x0, imm
                     alu_op_a_mux_sel_o  = OP_A_IMM;
@@ -2876,7 +2858,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   // 00: c.srli -> srli rd, rd, shamt
                   2'b00: begin
                     alu_op_b_mux_sel_o  = OP_B_IMM;
-                    // IMMEDIATE { 26'b0,instr[12],instr[6:2] }
                     imm_b_mux_sel_o     = IMMB_CSRLI;
                     regfile_alu_we      = 1'b1;
                     rega_used_o         = 1'b1;
@@ -2904,7 +2885,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                    // c.andi -> andi rd, rd, imm
                   2'b10: begin
                     alu_op_b_mux_sel_o  = OP_B_IMM;
-                    // IMMEDIATE { {26{instr[12]}},instr[12:12],instr[6:2] }
                     imm_b_mux_sel_o     = IMMB_CANDI;
                     regfile_alu_we      = 1'b1;
                     rega_used_o         = 1'b1;
@@ -2913,7 +2893,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                     alu_operator_o = ALU_AND;
                   end
                   2'b11: begin
-             
+
                     unique case ({instr_rdata_i[12], instr_rdata_i[6:5]})
                         3'b000: begin
                           // c.sub -> sub rd', rd', rs2'
@@ -3003,7 +2983,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               3'b000: begin
                 if (instr_rdata_i[12] == 1'b1) begin
                   /* Reserved for future extensions (instr_o don't care)
-                    SLLI64 (Generate Illegal Instruction Exception but 
+                    SLLI64 (Generate Illegal Instruction Exception but
                     it tries extend it non the less ?? ) */
                     alu_op_b_mux_sel_o  = OP_B_IMM;
                     imm_b_mux_sel_o     = IMMB_I;
@@ -3014,10 +2994,9 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                     alu_operator_o      = ALU_SLL;
                     illegal_c_insn_o    = 1'b1;
                 end else begin
-                    // SLLI,the immediate format is the same, thats why its called like that !  
+                    // SLLI,the immediate format is the same, thats why its called like that !
                     alu_op_b_mux_sel_o  = OP_B_IMM;
-                    // IMMEDIATE { 26'b0,instr[12:12],instr[6:2] }
-                    imm_b_mux_sel_o     = IMMB_CSRLI; 
+                    imm_b_mux_sel_o     = IMMB_CSRLI;
                     regfile_alu_we      = 1'b1;
                     rega_used_o         = 1'b1;
                     addr_ra_id_o        = instr_rdata_i[11:7];
@@ -3036,7 +3015,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   rega_used_o         = 1'b1;
                   alu_operator_o      = ALU_ADD;
                   // offset from immediate
-                  // IMMEDIATE {22'b0,instr[4:2],instr[12],instr[6:5],3'b0}
                   imm_b_mux_sel_o     = IMMB_CFLDSP;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
@@ -3061,11 +3039,10 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                 // offset from immediate
                 alu_operator_o      = ALU_ADD;
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                // IMMEDIATE { 24'b0,instr[3:2],instr[12:12],instr[6:4],2'b0},
                 imm_b_mux_sel_o     = IMMB_CLWSP;
                 data_sign_extension_o = 2'b01;
                 data_type_o = 2'b00;
-                
+
                 if (instr_rdata_i[11:7] == 5'b0) illegal_c_insn_o = 1'b1;
               end
 
@@ -3124,7 +3101,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                     addr_rb_id_o   = instr_rdata_i[6:2];
 
                     waddr_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                    
+
                     alu_operator_o = ALU_ADD;
                   end
                 end else begin
@@ -3157,14 +3134,14 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                     addr_rb_id_o   = instr_rdata_i[6:2];
                     waddr_id_o     = instr_rdata_i[REG_D_MSB:REG_D_LSB];;
 
-            
+
                     alu_operator_o = ALU_ADD;
                     // if (instr_rdata_i[11:7] == 5'b0) begin
                     //   // Hint -> add x0, x0, rs2
 
                     // end else begin
                     //   // c.add -> add rd, rd, rs2
-                      
+
                     // end
                   end
                 end
@@ -3182,7 +3159,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   reg_fp_b_o          = 1'b1;
 
                   // offset from immediate
-                  // IMMEDIATE { 24'b0,instr[9:7],instr[12:10],2'b0 } 
                   imm_b_mux_sel_o     = IMMB_FSDP;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
@@ -3224,7 +3200,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   addr_ra_id_o   = 5'd2;
                   addr_rb_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
                   // offset from immediate
-                  // IMMEDIATE { 24'b0,instr[8:7],instr[12:9],2'b0 }
                   imm_b_mux_sel_o     = IMMB_CSWSP;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
 
