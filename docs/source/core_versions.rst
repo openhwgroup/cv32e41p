@@ -23,7 +23,7 @@ The tuple identify which sets of parameters have been verified
 by OpenHW Group, and once RTL Freeze is achieved, no further
 non-logically equivalent changes are allowed on that set of parameters.
 
-**The core RTL is not yet frozen.**
+The core RTL is not yet frozen, but it's kept sequentially equivalent to CV32E40P for the RV32IMC subset except for don't care states.
 
 What happens after RTL Freeze?
 ------------------------------

@@ -75,7 +75,7 @@ with an additional register bank of 32 registers ``f0``-``f31``. These registers
 are stacked on top of the existing register file and can be accessed
 concurrently with the limitation that a maximum of three operands per
 cycle can be read. Each of the three operands addresses is extended with
-an ``fp_reg_sel`` signal which is generated in the instruction decoder
+a register file select signal which is generated in the instruction decoder
 when a FP instruction is decoded. This additional signals determines if
 the operand is located in the integer or the floating point register
 file.
