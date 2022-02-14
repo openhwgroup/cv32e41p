@@ -81,7 +81,7 @@ module cv32e41p_if_stage #(
 
     input  logic [4:0] m_exc_vec_pc_mux_i,  // selects ISR address for vectorized interrupt lines
     input  logic [4:0] u_exc_vec_pc_mux_i,  // selects ISR address for vectorized interrupt lines
-    output logic       csr_mtvec_init_o,  // tell CS regfile to init mtvec
+    output logic       csr_mtvec_init_o,    // tell CS regfile to init mtvec
 
     // jump and branch target and decision
     input logic [31:0] jump_target_id_i,  // jump target address
@@ -96,7 +96,7 @@ module cv32e41p_if_stage #(
     input logic id_ready_i,
 
     // misc signals
-    output logic if_busy_o,  // is the IF stage busy fetching instructions?
+    output logic if_busy_o,    // is the IF stage busy fetching instructions?
     output logic perf_imiss_o  // Instruction Fetch Miss
 );
 
@@ -200,7 +200,7 @@ module cv32e41p_if_stage #(
       .instr_addr_o   (instr_addr_o),
       .instr_gnt_i    (instr_gnt_i),
       .instr_rvalid_i (instr_rvalid_i),
-      .instr_err_i    (instr_err_i),  // Not supported (yet)
+      .instr_err_i    (instr_err_i),      // Not supported (yet)
       .instr_err_pmp_i(instr_err_pmp_i),  // Not supported (yet)
       .instr_rdata_i  (instr_rdata_i),
 
@@ -229,17 +229,17 @@ module cv32e41p_if_stage #(
   // IF-ID pipeline registers, frozen when the ID stage is stalled
   always_ff @(posedge clk, negedge rst_n) begin : IF_ID_PIPE_REGISTERS
     if (rst_n == 1'b0) begin
-      instr_valid_id_o    <= 1'b0;
-      instr_rdata_id_o    <= '0;
-      is_fetch_failed_o   <= 1'b0;
-      pc_id_o             <= '0;
+      instr_valid_id_o  <= 1'b0;
+      instr_rdata_id_o  <= '0;
+      is_fetch_failed_o <= 1'b0;
+      pc_id_o           <= '0;
     end else begin
 
       if (if_valid && instr_valid) begin
-        instr_valid_id_o    <= 1'b1;
-        instr_rdata_id_o    <= instr_aligned;
-        is_fetch_failed_o   <= 1'b0;
-        pc_id_o             <= pc_if_o;
+        instr_valid_id_o  <= 1'b1;
+        instr_rdata_id_o  <= instr_aligned;
+        is_fetch_failed_o <= 1'b0;
+        pc_id_o           <= pc_if_o;
       end else if (clear_instr_valid_i) begin
         instr_valid_id_o  <= 1'b0;
         is_fetch_failed_o <= fetch_failed;

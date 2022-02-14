@@ -199,8 +199,8 @@ module cv32e41p_id_stage
     // Interrupt signals
     input  logic [31:0] irq_i,
     input  logic        irq_sec_i,
-    input  logic [31:0] mie_bypass_i,  // MIE CSR (bypass)
-    output logic [31:0] mip_o,  // MIP CSR
+    input  logic [31:0] mie_bypass_i,    // MIE CSR (bypass)
+    output logic [31:0] mip_o,           // MIP CSR
     input  logic        m_irq_enable_i,
     input  logic        u_irq_enable_i,
     output logic        irq_ack_o,
@@ -257,8 +257,8 @@ module cv32e41p_id_stage
 
   logic [31:0] instr;
 
-  logic      is_compressed;
-  logic      illegal_c_insn;
+  logic        is_compressed;
+  logic        illegal_c_insn;
 
   // Decoder/Controller ID stage internal signals
   logic        deassert_we;
@@ -498,27 +498,28 @@ module cv32e41p_id_stage
 
 
   // immediate extraction and sign extension
-  assign imm_i_type = {{20{instr[31]}}, instr[31:20]};
-  assign imm_s_type = {{20{instr[31]}}, instr[31:25], instr[11:7]};
-  assign imm_sb_type = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
-  assign imm_u_type = {instr[31:12], 12'b0};
-  assign imm_uj_type = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+  assign imm_i_type      = {{20{instr[31]}}, instr[31:20]};
+  assign imm_s_type      = {{20{instr[31]}}, instr[31:25], instr[11:7]};
+  assign imm_sb_type     = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
+  assign imm_u_type      = {instr[31:12], 12'b0};
+  assign imm_uj_type     = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
 
-  assign imm_cjal_type    = { {20{instr[12]}},instr[12:12],instr[8:8],instr[10:9],instr[6:6],instr[7:7],instr[2:2],instr[11:11],instr[5:3],1'b0 };
-  assign imm_cspn_type    = { 22'b0,instr[10:7],instr[12:11],instr[5],instr[6],2'b0 };
-  assign imm_cfldsp_type  = {22'b0,instr[4:2],instr[12],instr[6:5],3'b0};
-  assign imm_caddi_type   = { {22{instr[12]}},instr[12:12],instr[4:3],instr[5:5],instr[2:2],instr[6:6],4'b0 };
-  assign imm_clwsp_type   = { 24'b0,instr[3:2],instr[12:12],instr[6:4],2'b0};
-  assign imm_cld_type     = {24'b0,instr[6:5],instr[12:10],3'b0 };
-  assign imm_cswsp_type   = { 24'b0,instr[8:7],instr[12:9],2'b0 };
-  assign imm_fsdp_type    = { 24'b0,instr[9:7],instr[12:10],2'b0 };
-  assign imm_clw_type     = {25'b0,instr[5],instr[12:10],instr[6],2'b0 };
-  assign imm_csrli_type   = { 26'b0,instr[12:12],instr[6:2] };
-  assign imm_candi_type   = { {26{instr[12]}},instr[12:12],instr[6:2] };
-  assign imm_cbeq_type    = { {23{instr[12]}},instr[12:12],instr[6:5],instr[2:2],instr[11:10],instr[4:3],1'b0 };
-  assign imm_clui_type    = { {14{instr[12]}},instr[12:12],instr[6:2],12'b0 };
+  assign imm_cjal_type   = {{20{instr[12]}},instr[12:12],instr[8:8],instr[10:9],instr[6:6],
+                           instr[7:7],instr[2:2],instr[11:11],instr[5:3],1'b0};
+  assign imm_cspn_type   = {22'b0, instr[10:7], instr[12:11], instr[5], instr[6], 2'b0};
+  assign imm_cfldsp_type = {22'b0, instr[4:2], instr[12], instr[6:5], 3'b0};
+  assign imm_caddi_type  = {{22{instr[12]}}, instr[12:12], instr[4:3], instr[5:5], instr[2:2], instr[6:6], 4'b0 };
+  assign imm_clwsp_type  = {24'b0, instr[3:2], instr[12:12], instr[6:4], 2'b0};
+  assign imm_cld_type    = {24'b0, instr[6:5], instr[12:10], 3'b0};
+  assign imm_cswsp_type  = {24'b0, instr[8:7], instr[12:9], 2'b0};
+  assign imm_fsdp_type   = {24'b0, instr[9:7], instr[12:10], 2'b0};
+  assign imm_clw_type    = {25'b0, instr[5], instr[12:10], instr[6], 2'b0};
+  assign imm_csrli_type  = {26'b0, instr[12:12], instr[6:2]};
+  assign imm_candi_type  = {{26{instr[12]}}, instr[12:12], instr[6:2]};
+  assign imm_cbeq_type   = {{23{instr[12]}}, instr[12:12], instr[6:5], instr[2:2], instr[11:10], instr[4:3], 1'b0};
+  assign imm_clui_type   = {{14{instr[12]}}, instr[12:12], instr[6:2], 12'b0};
 
-  assign imm_iz_type      = {20'b0, instr[31:20]};
+  assign imm_iz_type = {20'b0, instr[31:20]};
 
   // immediate for CSR manipulatin (zero extended) Used only in 32 bit instructions !
   assign imm_z_type = {27'b0, instr[REG_S1_MSB:REG_S1_LSB]};
@@ -604,15 +605,15 @@ module cv32e41p_id_stage
 
   always_comb begin : jump_target_mux
     unique case (ctrl_transfer_target_mux_sel)
-      JT_JAL:  jump_target = pc_id_i + imm_uj_type;
-      JT_COND: jump_target = pc_id_i + imm_sb_type;
-      JT_CJAL: jump_target = pc_id_i + imm_cjal_type;
+      JT_JAL:   jump_target = pc_id_i + imm_uj_type;
+      JT_COND:  jump_target = pc_id_i + imm_sb_type;
+      JT_CJAL:  jump_target = pc_id_i + imm_cjal_type;
       JT_CCOND: jump_target = pc_id_i + imm_cbeq_type;
 
       // JALR: Cannot forward RS1, since the path is too long
-      JT_JALR: jump_target = regfile_data_ra_id + imm_i_type;
+      JT_JALR:  jump_target = regfile_data_ra_id + imm_i_type;
       JT_CJALR: jump_target = regfile_data_ra_id;
-      default: jump_target = regfile_data_ra_id + imm_i_type;
+      default:  jump_target = regfile_data_ra_id + imm_i_type;
     endcase
   end
 
@@ -1037,10 +1038,10 @@ module cv32e41p_id_stage
       .alu_bmask_b_mux_sel_o(alu_bmask_b_mux_sel),
 
       // from IF/ID pipeline
-      .instr_rdata_i   (instr),
+      .instr_rdata_i(instr),
 
       // Compressed decoder output
-      .is_compressed_o(is_compressed),
+      .is_compressed_o (is_compressed),
       .illegal_c_insn_o(illegal_c_insn),
 
       // ALU signals
@@ -1138,7 +1139,7 @@ module cv32e41p_id_stage
       .PULP_CLUSTER(PULP_CLUSTER),
       .PULP_XPULP  (PULP_XPULP)
   ) controller_i (
-      .clk          (clk),  // Gated clock
+      .clk          (clk),            // Gated clock
       .clk_ungated_i(clk_ungated_i),  // Ungated clock
       .rst_n        (rst_n),
 
