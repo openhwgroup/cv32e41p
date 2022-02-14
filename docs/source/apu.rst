@@ -63,7 +63,7 @@ The CV32E41P apu interface can cause up to two outstanding transactions.
 Connection with the FPU
 -----------------------
 
-The CV32E41P sends FP operands over the ``apu_operands_o`` bus; the decoded RV32F operation as ADD, SUB, MUL, etc through the ``apu_op_o`` bus; the cast, destination and source formats as well as rounding mode through the ``apu_flags_o`` bus. The respose is the FPU result and relative output flags as Overflow, Underflow, etc.
+The CV32E41P sends FP operands over the ``apu_operands_o`` bus; the decoded RV32F operation as ADD, SUB, MUL, etc through the ``apu_op_o`` bus; the cast, destination and source formats as well as rounding mode through the ``apu_flags_o`` bus. The response is the FPU result and relative output flags as Overflow, Underflow, etc.
 
 
 APU Tracer
