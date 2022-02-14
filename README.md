@@ -44,13 +44,13 @@ When contributing SystemVerilog source code, please try to be consistent and adh
 coding style guide](https://github.com/lowRISC/style-guides/blob/master/VerilogCodingStyle.md).
 
 To get started, please check out the ["Good First Issue"
- list](https://github.com/openhwgroup/cv32e40p/issues?q=is%3Aissue+is%3Aopen+-label%3Astatus%3Aresolved+label%3A%22good+first+issue%22).
+ list](https://github.com/openhwgroup/cv32e41p/issues?q=is%3Aissue+is%3Aopen+-label%3Astatus%3Aresolved+label%3A%22good+first+issue%22).
 
-The RTL code has been formatted with ["Verible"](https://github.com/google/verible) v0.0-1149-g7eae750.
+The RTL code has been formatted with ["Verible"](https://github.com/google/verible) v0.0-1824-ga3b5bedf.
 
 ## Issues and Troubleshooting
 
 If you find any problems or issues with CV32E41P or the documentation, please check out the [issue
- tracker](https://github.com/openhwgroup/cv32e40p/issues) and create a new issue if your problem is
+ tracker](https://github.com/openhwgroup/cv32e41p/issues) and create a new issue if your problem is
 not yet tracked.
 
