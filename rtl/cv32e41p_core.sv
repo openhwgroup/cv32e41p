@@ -34,6 +34,10 @@ module cv32e41p_core
     parameter PULP_XPULP          =  0,                   // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. p.elw)
     parameter PULP_CLUSTER = 0,  // PULP Cluster interface (incl. p.elw)
     parameter FPU = 0,  // Floating Point Unit (interfaced via APU interface)
+    parameter Zcea = 0,  // 
+    parameter Zceb = 0,  // 
+    parameter Zcec = 0,  // 
+    parameter Zcee = 0,  // 
     parameter PULP_ZFINX = 0,  // Float-in-General Purpose registers
     parameter NUM_MHPMCOUNTERS = 1
 ) (
@@ -82,7 +86,7 @@ module cv32e41p_core
     input  logic [APU_NUSFLAGS_CPU-1:0]       apu_flags_i,
 
     // Interrupt inputs
-    input  logic [31:0] irq_i,  // CLINT interrupts + CLINT extension interrupts
+    input  logic [31:0] irq_i,      // CLINT interrupts + CLINT extension interrupts
     output logic        irq_ack_o,
     output logic [ 4:0] irq_id_o,
 
@@ -128,8 +132,6 @@ module cv32e41p_core
   // IF/ID signals
   logic        instr_valid_id;
   logic [31:0] instr_rdata_id;  // Instruction sampled inside IF stage
-  logic        is_compressed_id;
-  logic        illegal_c_insn_id;
   logic        is_fetch_failed_id;
 
   logic        clear_instr_valid;
@@ -383,9 +385,9 @@ module cv32e41p_core
       .PULP_CLUSTER(PULP_CLUSTER)
   ) sleep_unit_i (
       // Clock, reset interface
-      .clk_ungated_i(clk_i),  // Ungated clock
+      .clk_ungated_i(clk_i),        // Ungated clock
       .rst_n        (rst_ni),
-      .clk_gated_o  (clk),  // Gated clock
+      .clk_gated_o  (clk),          // Gated clock
       .scan_cg_en_i (scan_cg_en_i),
 
       // Core sleep
@@ -424,7 +426,11 @@ module cv32e41p_core
       .PULP_XPULP (PULP_XPULP),
       .PULP_OBI   (PULP_OBI),
       .PULP_SECURE(PULP_SECURE),
-      .FPU        (FPU)
+      .FPU        (FPU),
+      .Zcea       (Zcea),
+      .Zceb       (Zceb),
+      .Zcec       (Zcec),
+      .Zcee       (Zcee)
   ) if_stage_i (
       .clk  (clk),
       .rst_n(rst_ni),
@@ -450,8 +456,8 @@ module cv32e41p_core
       .instr_gnt_i    (instr_gnt_pmp),
       .instr_rvalid_i (instr_rvalid_i),
       .instr_rdata_i  (instr_rdata_i),
-      .instr_err_i    (1'b0),  // Bus error (not used yet)
-      .instr_err_pmp_i(instr_err_pmp),  // PMP error
+      .instr_err_i    (1'b0),            // Bus error (not used yet)
+      .instr_err_pmp_i(instr_err_pmp),   // PMP error
 
       // outputs to ID stage
       .instr_valid_id_o (instr_valid_id),
@@ -467,15 +473,13 @@ module cv32e41p_core
 
       .depc_i(depc),  // debug return address
 
-      .pc_mux_i    (pc_mux_id),  // sel for pc multiplexer
+      .pc_mux_i    (pc_mux_id),     // sel for pc multiplexer
       .exc_pc_mux_i(exc_pc_mux_id),
 
 
       .pc_id_o(pc_id),
       .pc_if_o(pc_if),
 
-      .is_compressed_id_o (is_compressed_id),
-      .illegal_c_insn_id_o(illegal_c_insn_id),
 
       .m_exc_vec_pc_mux_i(m_exc_vec_pc_mux_id),
       .u_exc_vec_pc_mux_i(u_exc_vec_pc_mux_id),
@@ -510,6 +514,10 @@ module cv32e41p_core
   /////////////////////////////////////////////////
   cv32e41p_id_stage #(
       .PULP_XPULP      (PULP_XPULP),
+      .Zcea            (Zcea),
+      .Zceb            (Zceb),
+      .Zcec            (Zcec),
+      .Zcee            (Zcee),
       .PULP_CLUSTER    (PULP_CLUSTER),
       .N_HWLP          (N_HWLP),
       .PULP_SECURE     (PULP_SECURE),
@@ -524,7 +532,7 @@ module cv32e41p_core
       .APU_NUSFLAGS_CPU(APU_NUSFLAGS_CPU),
       .DEBUG_TRIGGER_EN(DEBUG_TRIGGER_EN)
   ) id_stage_i (
-      .clk          (clk),  // Gated clock
+      .clk          (clk),    // Gated clock
       .clk_ungated_i(clk_i),  // Ungated clock
       .rst_n        (rst_ni),
 
@@ -556,9 +564,6 @@ module cv32e41p_core
       .is_fetch_failed_i(is_fetch_failed_id),
 
       .pc_id_i(pc_id),
-
-      .is_compressed_i (is_compressed_id),
-      .illegal_c_insn_i(illegal_c_insn_id),
 
       // Stalls
       .halt_if_o(halt_if),
@@ -593,14 +598,14 @@ module cv32e41p_core
       .regfile_alu_waddr_ex_o(regfile_alu_waddr_ex),
 
       // MUL
-      .mult_operator_ex_o   (mult_operator_ex),  // from ID to EX stage
-      .mult_en_ex_o         (mult_en_ex),  // from ID to EX stage
+      .mult_operator_ex_o   (mult_operator_ex),     // from ID to EX stage
+      .mult_en_ex_o         (mult_en_ex),           // from ID to EX stage
       .mult_sel_subword_ex_o(mult_sel_subword_ex),  // from ID to EX stage
       .mult_signed_mode_ex_o(mult_signed_mode_ex),  // from ID to EX stage
-      .mult_operand_a_ex_o  (mult_operand_a_ex),  // from ID to EX stage
-      .mult_operand_b_ex_o  (mult_operand_b_ex),  // from ID to EX stage
-      .mult_operand_c_ex_o  (mult_operand_c_ex),  // from ID to EX stage
-      .mult_imm_ex_o        (mult_imm_ex),  // from ID to EX stage
+      .mult_operand_a_ex_o  (mult_operand_a_ex),    // from ID to EX stage
+      .mult_operand_b_ex_o  (mult_operand_b_ex),    // from ID to EX stage
+      .mult_operand_c_ex_o  (mult_operand_c_ex),    // from ID to EX stage
+      .mult_imm_ex_o        (mult_imm_ex),          // from ID to EX stage
 
       .mult_dot_op_a_ex_o  (mult_dot_op_a_ex),  // from ID to EX stage
       .mult_dot_op_b_ex_o  (mult_dot_op_b_ex),  // from ID to EX stage
@@ -636,9 +641,9 @@ module cv32e41p_core
       .current_priv_lvl_i   (current_priv_lvl),
       .csr_irq_sec_o        (csr_irq_sec),
       .csr_cause_o          (csr_cause),
-      .csr_save_if_o        (csr_save_if),  // control signal to save pc
-      .csr_save_id_o        (csr_save_id),  // control signal to save pc
-      .csr_save_ex_o        (csr_save_ex),  // control signal to save pc
+      .csr_save_if_o        (csr_save_if),          // control signal to save pc
+      .csr_save_id_o        (csr_save_id),          // control signal to save pc
+      .csr_save_ex_o        (csr_save_ex),          // control signal to save pc
       .csr_restore_mret_id_o(csr_restore_mret_id),  // control signal to restore pc
       .csr_restore_uret_id_o(csr_restore_uret_id),  // control signal to restore pc
 
@@ -660,11 +665,11 @@ module cv32e41p_core
       .csr_hwlp_data_i (csr_hwlp_data),
 
       // LSU
-      .data_req_ex_o       (data_req_ex),  // to load store unit
-      .data_we_ex_o        (data_we_ex),  // to load store unit
+      .data_req_ex_o       (data_req_ex),         // to load store unit
+      .data_we_ex_o        (data_we_ex),          // to load store unit
       .atop_ex_o           (data_atop_ex),
-      .data_type_ex_o      (data_type_ex),  // to load store unit
-      .data_sign_ext_ex_o  (data_sign_ext_ex),  // to load store unit
+      .data_type_ex_o      (data_type_ex),        // to load store unit
+      .data_sign_ext_ex_o  (data_sign_ext_ex),    // to load store unit
       .data_reg_offset_ex_o(data_reg_offset_ex),  // to load store unit
       .data_load_event_ex_o(data_load_event_ex),  // to load store unit
 
@@ -753,34 +758,34 @@ module cv32e41p_core
 
       // Alu signals from ID stage
       .alu_en_i        (alu_en_ex),
-      .alu_operator_i  (alu_operator_ex),  // from ID/EX pipe registers
+      .alu_operator_i  (alu_operator_ex),   // from ID/EX pipe registers
       .alu_operand_a_i (alu_operand_a_ex),  // from ID/EX pipe registers
       .alu_operand_b_i (alu_operand_b_ex),  // from ID/EX pipe registers
       .alu_operand_c_i (alu_operand_c_ex),  // from ID/EX pipe registers
-      .bmask_a_i       (bmask_a_ex),  // from ID/EX pipe registers
-      .bmask_b_i       (bmask_b_ex),  // from ID/EX pipe registers
-      .imm_vec_ext_i   (imm_vec_ext_ex),  // from ID/EX pipe registers
-      .alu_vec_mode_i  (alu_vec_mode_ex),  // from ID/EX pipe registers
-      .alu_is_clpx_i   (alu_is_clpx_ex),  // from ID/EX pipe registers
+      .bmask_a_i       (bmask_a_ex),        // from ID/EX pipe registers
+      .bmask_b_i       (bmask_b_ex),        // from ID/EX pipe registers
+      .imm_vec_ext_i   (imm_vec_ext_ex),    // from ID/EX pipe registers
+      .alu_vec_mode_i  (alu_vec_mode_ex),   // from ID/EX pipe registers
+      .alu_is_clpx_i   (alu_is_clpx_ex),    // from ID/EX pipe registers
       .alu_is_subrot_i (alu_is_subrot_ex),  // from ID/Ex pipe registers
-      .alu_clpx_shift_i(alu_clpx_shift_ex),  // from ID/EX pipe registers
+      .alu_clpx_shift_i(alu_clpx_shift_ex), // from ID/EX pipe registers
 
       // Multipler
-      .mult_operator_i   (mult_operator_ex),  // from ID/EX pipe registers
-      .mult_operand_a_i  (mult_operand_a_ex),  // from ID/EX pipe registers
-      .mult_operand_b_i  (mult_operand_b_ex),  // from ID/EX pipe registers
-      .mult_operand_c_i  (mult_operand_c_ex),  // from ID/EX pipe registers
-      .mult_en_i         (mult_en_ex),  // from ID/EX pipe registers
+      .mult_operator_i   (mult_operator_ex),     // from ID/EX pipe registers
+      .mult_operand_a_i  (mult_operand_a_ex),    // from ID/EX pipe registers
+      .mult_operand_b_i  (mult_operand_b_ex),    // from ID/EX pipe registers
+      .mult_operand_c_i  (mult_operand_c_ex),    // from ID/EX pipe registers
+      .mult_en_i         (mult_en_ex),           // from ID/EX pipe registers
       .mult_sel_subword_i(mult_sel_subword_ex),  // from ID/EX pipe registers
       .mult_signed_mode_i(mult_signed_mode_ex),  // from ID/EX pipe registers
-      .mult_imm_i        (mult_imm_ex),  // from ID/EX pipe registers
-      .mult_dot_op_a_i   (mult_dot_op_a_ex),  // from ID/EX pipe registers
-      .mult_dot_op_b_i   (mult_dot_op_b_ex),  // from ID/EX pipe registers
-      .mult_dot_op_c_i   (mult_dot_op_c_ex),  // from ID/EX pipe registers
-      .mult_dot_signed_i (mult_dot_signed_ex),  // from ID/EX pipe registers
-      .mult_is_clpx_i    (mult_is_clpx_ex),  // from ID/EX pipe registers
-      .mult_clpx_shift_i (mult_clpx_shift_ex),  // from ID/EX pipe registers
-      .mult_clpx_img_i   (mult_clpx_img_ex),  // from ID/EX pipe registers
+      .mult_imm_i        (mult_imm_ex),          // from ID/EX pipe registers
+      .mult_dot_op_a_i   (mult_dot_op_a_ex),     // from ID/EX pipe registers
+      .mult_dot_op_b_i   (mult_dot_op_b_ex),     // from ID/EX pipe registers
+      .mult_dot_op_c_i   (mult_dot_op_c_ex),     // from ID/EX pipe registers
+      .mult_dot_signed_i (mult_dot_signed_ex),   // from ID/EX pipe registers
+      .mult_is_clpx_i    (mult_is_clpx_ex),      // from ID/EX pipe registers
+      .mult_clpx_shift_i (mult_clpx_shift_ex),   // from ID/EX pipe registers
+      .mult_clpx_img_i   (mult_clpx_img_ex),     // from ID/EX pipe registers
 
       .mult_multicycle_o(mult_multicycle),  // to ID/EX pipe registers
 
@@ -878,8 +883,8 @@ module cv32e41p_core
       .data_req_o    (data_req_pmp),
       .data_gnt_i    (data_gnt_pmp),
       .data_rvalid_i (data_rvalid_i),
-      .data_err_i    (1'b0),  // Bus error (not used yet)
-      .data_err_pmp_i(data_err_pmp),  // PMP error
+      .data_err_i    (1'b0),           // Bus error (not used yet)
+      .data_err_pmp_i(data_err_pmp),   // PMP error
 
       .data_addr_o (data_addr_pmp),
       .data_we_o   (data_we_o),
@@ -895,7 +900,7 @@ module cv32e41p_core
       .data_wdata_ex_i     (alu_operand_c_ex),
       .data_reg_offset_ex_i(data_reg_offset_ex),
       .data_load_event_ex_i(data_load_event_ex),
-      .data_sign_ext_ex_i  (data_sign_ext_ex),  // sign extension
+      .data_sign_ext_ex_i  (data_sign_ext_ex),    // sign extension
 
       .data_rdata_ex_o  (lsu_rdata),
       .data_req_ex_i    (data_req_ex),
@@ -1137,7 +1142,7 @@ module cv32e41p_core
   always_ff @(posedge rst_ni) begin
     if (PULP_XPULP) begin
       $warning(
-          "PULP_XPULP == 1 has not been verified yet and non-backward compatible RTL fixes are expected (see https://github.com/openhwgroup/cv32e41p/issues/452)");
+          "PULP_XPULP == 1 has not been verified yet and non-backward compatible RTL fixes are expected (see https://github.com/openhwgroup/cv32e40p/issues/452)");
     end
     if (PULP_CLUSTER) begin
       $warning("PULP_CLUSTER == 1 has not been verified yet");

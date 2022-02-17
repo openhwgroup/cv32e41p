@@ -28,10 +28,14 @@
 module cv32e41p_wrapper
   import cv32e41p_apu_core_pkg::*;
 #(
-    parameter PULP_XPULP          =  0,                   // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. p.elw)
+    parameter PULP_XPULP          =  0,  // PULP ISA Extension (incl. custom CSRs and hardware loop, excl. p.elw)
     parameter PULP_CLUSTER = 0,  // PULP Cluster interface (incl. p.elw)
     parameter FPU = 0,  // Floating Point Unit (interfaced via APU interface)
     parameter PULP_ZFINX = 0,  // Float-in-General Purpose registers
+    parameter Zcea = 0,
+    parameter Zceb = 0,
+    parameter Zcec = 0,
+    parameter Zcee = 0,
     parameter NUM_MHPMCOUNTERS = 1
 ) (
     // Clock and Reset
@@ -39,7 +43,7 @@ module cv32e41p_wrapper
     input logic rst_ni,
 
     input logic pulp_clock_en_i,  // PULP clock enable (only used if PULP_CLUSTER = 1)
-    input logic scan_cg_en_i,  // Enable all clock gates for testing
+    input logic scan_cg_en_i,     // Enable all clock gates for testing
 
     // Core ID, Cluster ID, debug mode halt address and boot address are considered more or less static
     input logic [31:0] boot_addr_i,
@@ -79,7 +83,7 @@ module cv32e41p_wrapper
     input  logic [APU_NUSFLAGS_CPU-1:0]       apu_flags_i,
 
     // Interrupt inputs
-    input  logic [31:0] irq_i,  // CLINT interrupts + CLINT extension interrupts
+    input  logic [31:0] irq_i,      // CLINT interrupts + CLINT extension interrupts
     output logic        irq_ack_o,
     output logic [ 4:0] irq_id_o,
 
@@ -144,7 +148,7 @@ module cv32e41p_wrapper
       .pc                (core_i.id_stage_i.pc_id_i),
       .instr             (core_i.id_stage_i.instr),
       .controller_state_i(core_i.id_stage_i.controller_i.ctrl_fsm_cs),
-      .compressed        (core_i.id_stage_i.is_compressed_i),
+      .compressed        (core_i.id_stage_i.is_compressed),
       .id_valid          (core_i.id_stage_i.id_valid_o),
       .is_decoding       (core_i.id_stage_i.is_decoding_o),
       .is_illegal        (core_i.id_stage_i.illegal_insn_dec),
@@ -204,6 +208,10 @@ module cv32e41p_wrapper
       .PULP_CLUSTER    (PULP_CLUSTER),
       .FPU             (FPU),
       .PULP_ZFINX      (PULP_ZFINX),
+      .Zcea            (Zcea),
+      .Zceb            (Zceb),
+      .Zcec            (Zcec),
+      .Zcee            (Zcee),
       .NUM_MHPMCOUNTERS(NUM_MHPMCOUNTERS)
   ) core_i (
       .*

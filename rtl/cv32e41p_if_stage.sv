@@ -29,7 +29,11 @@ module cv32e41p_if_stage #(
     parameter PULP_XPULP      = 0,                        // PULP ISA Extension (including PULP specific CSRs and hardware loop, excluding p.elw)
     parameter PULP_OBI = 0,  // Legacy PULP OBI behavior
     parameter PULP_SECURE = 0,
-    parameter FPU = 0
+    parameter FPU = 0,
+    parameter Zcea = 0,
+    parameter Zceb = 0,
+    parameter Zcec = 0,
+    parameter Zcee = 0
 ) (
     input logic clk,
     input logic rst_n,
@@ -60,8 +64,6 @@ module cv32e41p_if_stage #(
     // Output of IF Pipeline stage
     output logic instr_valid_id_o,  // instruction in IF/ID pipeline is valid
     output logic       [31:0] instr_rdata_id_o,      // read instruction is sampled and sent to ID stage for decoding
-    output logic is_compressed_id_o,  // compressed decoder thinks this is a compressed instruction
-    output logic illegal_c_insn_id_o,  // compressed decoder thinks this is an invalid instruction
     output logic [31:0] pc_if_o,
     output logic [31:0] pc_id_o,
     output logic is_fetch_failed_o,
@@ -79,7 +81,7 @@ module cv32e41p_if_stage #(
 
     input  logic [4:0] m_exc_vec_pc_mux_i,  // selects ISR address for vectorized interrupt lines
     input  logic [4:0] u_exc_vec_pc_mux_i,  // selects ISR address for vectorized interrupt lines
-    output logic       csr_mtvec_init_o,  // tell CS regfile to init mtvec
+    output logic       csr_mtvec_init_o,    // tell CS regfile to init mtvec
 
     // jump and branch target and decision
     input logic [31:0] jump_target_id_i,  // jump target address
@@ -94,7 +96,7 @@ module cv32e41p_if_stage #(
     input logic id_ready_i,
 
     // misc signals
-    output logic if_busy_o,  // is the IF stage busy fetching instructions?
+    output logic if_busy_o,    // is the IF stage busy fetching instructions?
     output logic perf_imiss_o  // Instruction Fetch Miss
 );
 
@@ -120,7 +122,6 @@ module cv32e41p_if_stage #(
   logic        aligner_ready;
   logic        instr_valid;
 
-  logic        illegal_c_insn;
   logic [31:0] instr_aligned;
   logic [31:0] instr_decompressed;
   logic        instr_compressed_int;
@@ -199,7 +200,7 @@ module cv32e41p_if_stage #(
       .instr_addr_o   (instr_addr_o),
       .instr_gnt_i    (instr_gnt_i),
       .instr_rvalid_i (instr_rvalid_i),
-      .instr_err_i    (instr_err_i),  // Not supported (yet)
+      .instr_err_i    (instr_err_i),      // Not supported (yet)
       .instr_err_pmp_i(instr_err_pmp_i),  // Not supported (yet)
       .instr_rdata_i  (instr_rdata_i),
 
@@ -228,21 +229,17 @@ module cv32e41p_if_stage #(
   // IF-ID pipeline registers, frozen when the ID stage is stalled
   always_ff @(posedge clk, negedge rst_n) begin : IF_ID_PIPE_REGISTERS
     if (rst_n == 1'b0) begin
-      instr_valid_id_o    <= 1'b0;
-      instr_rdata_id_o    <= '0;
-      is_fetch_failed_o   <= 1'b0;
-      pc_id_o             <= '0;
-      is_compressed_id_o  <= 1'b0;
-      illegal_c_insn_id_o <= 1'b0;
+      instr_valid_id_o  <= 1'b0;
+      instr_rdata_id_o  <= '0;
+      is_fetch_failed_o <= 1'b0;
+      pc_id_o           <= '0;
     end else begin
 
       if (if_valid && instr_valid) begin
-        instr_valid_id_o    <= 1'b1;
-        instr_rdata_id_o    <= instr_decompressed;
-        is_compressed_id_o  <= instr_compressed_int;
-        illegal_c_insn_id_o <= illegal_c_insn;
-        is_fetch_failed_o   <= 1'b0;
-        pc_id_o             <= pc_if_o;
+        instr_valid_id_o  <= 1'b1;
+        instr_rdata_id_o  <= instr_aligned;
+        is_fetch_failed_o <= 1'b0;
+        pc_id_o           <= pc_if_o;
       end else if (clear_instr_valid_i) begin
         instr_valid_id_o  <= 1'b0;
         is_fetch_failed_o <= fetch_failed;
@@ -269,14 +266,6 @@ module cv32e41p_if_stage #(
       .pc_o            (pc_if_o)
   );
 
-  cv32e41p_compressed_decoder #(
-      .FPU(FPU)
-  ) compressed_decoder_i (
-      .instr_i        (instr_aligned),
-      .instr_o        (instr_decompressed),
-      .is_compressed_o(instr_compressed_int),
-      .illegal_instr_o(illegal_c_insn)
-  );
 
   //----------------------------------------------------------------------------
   // Assertions
