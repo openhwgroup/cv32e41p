@@ -48,20 +48,20 @@ typedef struct {
 } mem_acc_t;
 
 class instr_trace_t;
-  time         simtime;
-  int          cycles;
-  logic [31:0] pc;
-  logic [31:0] instr;
-  bit          compressed;
-  bit          wb_bypass;
-  bit          misaligned;
-  bit          retire;
-  bit          ebreak;
-  string       str;
-  reg_t        regs_read[$];
-  reg_t        regs_write[$];
-  mem_acc_t    mem_access[$];
-  logic        retired;
+  time             simtime;
+  int              cycles;
+  logic     [31:0] pc;
+  logic     [31:0] instr;
+  bit              compressed;
+  bit              wb_bypass;
+  bit              misaligned;
+  bit              retire;
+  bit              ebreak;
+  string           str;
+  reg_t            regs_read  [$];
+  reg_t            regs_write [$];
+  mem_acc_t        mem_access [$];
+  logic            retired;
 
   function new();
     str        = "";
@@ -359,9 +359,8 @@ class instr_trace_t;
       regs_read.push_back('{rs1, rs1_value, 0});
       regs_read.push_back('{rs2, rs2_value, 0});
       regs_write.push_back('{rd, 'x, 0});
-      str = $sformatf(
-          "%-16s x%0d, x%0d, x%0d, 0x%0d", mnemonic, rd, rs1, rs2, $unsigned(imm_s3_type[4:0])
-      );
+      str = $sformatf("%-16s x%0d, x%0d, x%0d, 0x%0d", mnemonic, rd, rs1, rs2,
+                      $unsigned(imm_s3_type[4:0]));
     end
   endfunction  // printAddNInstr
 
@@ -389,9 +388,8 @@ class instr_trace_t;
       regs_read.push_back('{rs2, rs2_value, 0});
       regs_read.push_back('{rs4, rs3_value, 0});
       regs_write.push_back('{rd, 'x, 0});
-      str = $sformatf(
-          "%-16s f%0d, f%0d, f%0d, f%0d", mnemonic, rd - 32, rs1 - 32, rs2 - 32, rs4 - 32
-      );
+      str = $sformatf("%-16s f%0d, f%0d, f%0d, f%0d", mnemonic, rd - 32, rs1 - 32, rs2 - 32,
+                      rs4 - 32);
     end
   endfunction  // printF3Instr
 

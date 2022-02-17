@@ -498,26 +498,40 @@ module cv32e41p_id_stage
 
 
   // immediate extraction and sign extension
-  assign imm_i_type      = {{20{instr[31]}}, instr[31:20]};
-  assign imm_s_type      = {{20{instr[31]}}, instr[31:25], instr[11:7]};
-  assign imm_sb_type     = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
-  assign imm_u_type      = {instr[31:12], 12'b0};
-  assign imm_uj_type     = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+  assign imm_i_type = {{20{instr[31]}}, instr[31:20]};
+  assign imm_s_type = {{20{instr[31]}}, instr[31:25], instr[11:7]};
+  assign imm_sb_type = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
+  assign imm_u_type = {instr[31:12], 12'b0};
+  assign imm_uj_type = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
 
-  assign imm_cjal_type   = {{20{instr[12]}},instr[12:12],instr[8:8],instr[10:9],instr[6:6],
-                           instr[7:7],instr[2:2],instr[11:11],instr[5:3],1'b0};
-  assign imm_cspn_type   = {22'b0, instr[10:7], instr[12:11], instr[5], instr[6], 2'b0};
+  assign imm_cjal_type = {
+    {20{instr[12]}},
+    instr[12:12],
+    instr[8:8],
+    instr[10:9],
+    instr[6:6],
+    instr[7:7],
+    instr[2:2],
+    instr[11:11],
+    instr[5:3],
+    1'b0
+  };
+  assign imm_cspn_type = {22'b0, instr[10:7], instr[12:11], instr[5], instr[6], 2'b0};
   assign imm_cfldsp_type = {22'b0, instr[4:2], instr[12], instr[6:5], 3'b0};
-  assign imm_caddi_type  = {{22{instr[12]}}, instr[12:12], instr[4:3], instr[5:5], instr[2:2], instr[6:6], 4'b0 };
-  assign imm_clwsp_type  = {24'b0, instr[3:2], instr[12:12], instr[6:4], 2'b0};
-  assign imm_cld_type    = {24'b0, instr[6:5], instr[12:10], 3'b0};
-  assign imm_cswsp_type  = {24'b0, instr[8:7], instr[12:9], 2'b0};
-  assign imm_fsdp_type   = {24'b0, instr[9:7], instr[12:10], 2'b0};
-  assign imm_clw_type    = {25'b0, instr[5], instr[12:10], instr[6], 2'b0};
-  assign imm_csrli_type  = {26'b0, instr[12:12], instr[6:2]};
-  assign imm_candi_type  = {{26{instr[12]}}, instr[12:12], instr[6:2]};
-  assign imm_cbeq_type   = {{23{instr[12]}}, instr[12:12], instr[6:5], instr[2:2], instr[11:10], instr[4:3], 1'b0};
-  assign imm_clui_type   = {{14{instr[12]}}, instr[12:12], instr[6:2], 12'b0};
+  assign imm_caddi_type = {
+    {22{instr[12]}}, instr[12:12], instr[4:3], instr[5:5], instr[2:2], instr[6:6], 4'b0
+  };
+  assign imm_clwsp_type = {24'b0, instr[3:2], instr[12:12], instr[6:4], 2'b0};
+  assign imm_cld_type = {24'b0, instr[6:5], instr[12:10], 3'b0};
+  assign imm_cswsp_type = {24'b0, instr[8:7], instr[12:9], 2'b0};
+  assign imm_fsdp_type = {24'b0, instr[9:7], instr[12:10], 2'b0};
+  assign imm_clw_type = {25'b0, instr[5], instr[12:10], instr[6], 2'b0};
+  assign imm_csrli_type = {26'b0, instr[12:12], instr[6:2]};
+  assign imm_candi_type = {{26{instr[12]}}, instr[12:12], instr[6:2]};
+  assign imm_cbeq_type = {
+    {23{instr[12]}}, instr[12:12], instr[6:5], instr[2:2], instr[11:10], instr[4:3], 1'b0
+  };
+  assign imm_clui_type = {{14{instr[12]}}, instr[12:12], instr[6:2], 12'b0};
 
   assign imm_iz_type = {20'b0, instr[31:20]};
 

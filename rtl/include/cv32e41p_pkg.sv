@@ -82,8 +82,8 @@ package cv32e41p_pkg;
 
   parameter REG_D_MSB = 11;
   parameter REG_D_LSB = 7;
-  
-  
+
+
   //////////////////////////////////////////////////////////////////////////////
   //      _    _    _   _    ___                       _   _                  //
   //     / \  | |  | | | |  / _ \ _ __   ___ _ __ __ _| |_(_) ___  _ __  ___  //
@@ -599,29 +599,29 @@ package cv32e41p_pkg;
   parameter OP_B_BMASK = 3'b100;
 
   // immediate b selection
-  parameter IMMB_I      = 5'b00000;
-  parameter IMMB_S      = 5'b00001;
-  parameter IMMB_U      = 5'b00010;
+  parameter IMMB_I = 5'b00000;
+  parameter IMMB_S = 5'b00001;
+  parameter IMMB_U = 5'b00010;
   parameter IMMB_PCINCR = 5'b00011;
-  parameter IMMB_S2     = 5'b00100;
-  parameter IMMB_S3     = 5'b00101;
-  parameter IMMB_VS     = 5'b00110;
-  parameter IMMB_VU     = 5'b00111;
-  parameter IMMB_SHUF   = 5'b01000;
-  parameter IMMB_CLIP   = 5'b01001;
-  parameter IMMB_BI     = 5'b01010;
-  parameter IMMB_CJAL   = 5'b01011;
-  parameter IMMB_CSPN   = 5'b01100;
+  parameter IMMB_S2 = 5'b00100;
+  parameter IMMB_S3 = 5'b00101;
+  parameter IMMB_VS = 5'b00110;
+  parameter IMMB_VU = 5'b00111;
+  parameter IMMB_SHUF = 5'b01000;
+  parameter IMMB_CLIP = 5'b01001;
+  parameter IMMB_BI = 5'b01010;
+  parameter IMMB_CJAL = 5'b01011;
+  parameter IMMB_CSPN = 5'b01100;
   parameter IMMB_CFLDSP = 5'b01101;
-  parameter IMMB_CADDI  = 5'b01110;
-  parameter IMMB_CLWSP  = 5'b01111;
-  parameter IMMB_CLD    = 5'b10000;
-  parameter IMMB_CSWSP  = 5'b10001;
-  parameter IMMB_FSDP   = 5'b10010;
-  parameter IMMB_CLW    = 5'b10011;
-  parameter IMMB_CSRLI  = 5'b10100;
-  parameter IMMB_CANDI  = 5'b10101;
-  parameter IMMB_CLUI   = 5'b10110;
+  parameter IMMB_CADDI = 5'b01110;
+  parameter IMMB_CLWSP = 5'b01111;
+  parameter IMMB_CLD = 5'b10000;
+  parameter IMMB_CSWSP = 5'b10001;
+  parameter IMMB_FSDP = 5'b10010;
+  parameter IMMB_CLW = 5'b10011;
+  parameter IMMB_CSRLI = 5'b10100;
+  parameter IMMB_CANDI = 5'b10101;
+  parameter IMMB_CLUI = 5'b10110;
 
   // bit mask selection
   parameter BMASK_A_ZERO = 1'b0;
@@ -654,10 +654,10 @@ package cv32e41p_pkg;
   parameter BRANCH_COND = 2'b11;  // conditional branches
 
   // jump target mux
-  parameter JT_JAL   = 3'b001;
-  parameter JT_JALR  = 3'b010;
-  parameter JT_COND  = 3'b011;
-  parameter JT_CJAL  = 3'b100;
+  parameter JT_JAL = 3'b001;
+  parameter JT_JALR = 3'b010;
+  parameter JT_COND = 3'b011;
+  parameter JT_CJAL = 3'b100;
   parameter JT_CCOND = 3'b101;
   parameter JT_CJALR = 3'b110;
 
