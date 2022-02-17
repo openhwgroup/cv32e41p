@@ -54,6 +54,8 @@ package cv32e41p_pkg;
   parameter OPCODE_LOAD_FP = 7'h07;
   parameter OPCODE_AMO = 7'h2F;
 
+  parameter OPCODE_ZCEC = 7'h2b;
+
   // those opcodes are now used for PULP custom instructions
   // parameter OPCODE_CUST0     = 7'h0b
   // parameter OPCODE_CUST1     = 7'h2b
@@ -622,6 +624,9 @@ package cv32e41p_pkg;
   parameter IMMB_CSRLI = 5'b10100;
   parameter IMMB_CANDI = 5'b10101;
   parameter IMMB_CLUI = 5'b10110;
+  parameter IMMB_CLSB = 5'b10111;
+  parameter IMMB_CLSH = 5'b11000;
+  parameter IMMB_ONES = 5'b11001;
 
   // bit mask selection
   parameter BMASK_A_ZERO = 1'b0;
@@ -641,6 +646,10 @@ package cv32e41p_pkg;
   // multiplication immediates
   parameter MIMM_ZERO = 1'b0;
   parameter MIMM_S3 = 1'b1;
+
+  // Selectors for shiftter unit
+  parameter IMM_ZERO = 1'b0;
+  parameter IMM_VU = 1'b1;
 
   // operand c selection
   parameter OP_C_REGC_OR_FWD = 2'b00;
