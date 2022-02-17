@@ -563,7 +563,8 @@ package cv32e41p_pkg;
   parameter MVENDORID_BANK = 25'hC;  // Number of continuation codes
 
   // Machine Architecture ID (https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
-  parameter MARCHID = 32'h4;
+  // https://github.com/riscv/riscv-isa-manual/pull/818/files
+  parameter MARCHID = 32'h28;
 
   ///////////////////////////////////////////////
   //   ___ ____    ____  _                     //
@@ -598,29 +599,30 @@ package cv32e41p_pkg;
   parameter OP_B_BMASK = 3'b100;
 
   // immediate b selection
-  parameter IMMB_I      = 5'b00000;  // 0
-  parameter IMMB_S      = 5'b00001;  // 1
-  parameter IMMB_U      = 5'b00010;  // 2
-  parameter IMMB_PCINCR = 5'b00011;  // 3
-  parameter IMMB_S2     = 5'b00100;  // 4
-  parameter IMMB_S3     = 5'b00101;  // 5
-  parameter IMMB_VS     = 5'b00110;  // 6
-  parameter IMMB_VU     = 5'b00111;  // 7
-  parameter IMMB_SHUF   = 5'b01000;  // 8
-  parameter IMMB_CLIP   = 5'b01001;  // 9
-  parameter IMMB_BI     = 5'b01010;  //10
-  parameter IMMB_CJAL   = 5'b01011;  //11
-  parameter IMMB_CSPN   = 5'b01100;  //12
-  parameter IMMB_CFLDSP = 5'b01101;  //13
-  parameter IMMB_CADDI  = 5'b01110;  //14
-  parameter IMMB_CLWSP  = 5'b01111;  //15
-  parameter IMMB_CLD    = 5'b10000;  //16
-  parameter IMMB_CSWSP  = 5'b10001;  //17
-  parameter IMMB_FSDP   = 5'b10010;  //18
-  parameter IMMB_CLW    = 5'b10011;  //19
-  parameter IMMB_CSRLI  = 5'b10100;  //20
-  parameter IMMB_CANDI  = 5'b10101;  //21
-  parameter IMMB_CLUI   = 5'b10110;  //22
+  parameter IMMB_I      = 5'b00000;
+  parameter IMMB_S      = 5'b00001;
+  parameter IMMB_U      = 5'b00010;
+  parameter IMMB_PCINCR = 5'b00011;
+  parameter IMMB_S2     = 5'b00100;
+  parameter IMMB_S3     = 5'b00101;
+  parameter IMMB_VS     = 5'b00110;
+  parameter IMMB_VU     = 5'b00111;
+  parameter IMMB_SHUF   = 5'b01000;
+  parameter IMMB_CLIP   = 5'b01001;
+  parameter IMMB_BI     = 5'b01010;
+  parameter IMMB_CJAL   = 5'b01011;
+  parameter IMMB_CSPN   = 5'b01100;
+  parameter IMMB_CFLDSP = 5'b01101;
+  parameter IMMB_CADDI  = 5'b01110;
+  parameter IMMB_CLWSP  = 5'b01111;
+  parameter IMMB_CLD    = 5'b10000;
+  parameter IMMB_CSWSP  = 5'b10001;
+  parameter IMMB_FSDP   = 5'b10010;
+  parameter IMMB_CLW    = 5'b10011;
+  parameter IMMB_CSRLI  = 5'b10100;
+  parameter IMMB_CANDI  = 5'b10101;
+  parameter IMMB_CLUI   = 5'b10110;
+
   // bit mask selection
   parameter BMASK_A_ZERO = 1'b0;
   parameter BMASK_A_S3 = 1'b1;
