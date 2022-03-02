@@ -325,6 +325,9 @@ module cv32e41p_id_stage
   logic [31:0] imm_cbeq_type;
   logic [31:0] imm_clui_type;
 
+  logic [31:0] imm_clsb_type;
+  logic [31:0] imm_clsh_type;
+
   logic [31:0] imm_a;  // contains the immediate for operand b
   logic [31:0] imm_b;  // contains the immediate for operand b
 
@@ -468,6 +471,7 @@ module cv32e41p_id_stage
   logic [ 1:0] imm_vec_ext_id;
   logic [ 4:0] mult_imm_id;
 
+  logic [ 0:0] vec_ext_id_mux_sel;
   logic [ 1:0] alu_vec_mode;
   logic        scalar_replication;
   logic        scalar_replication_c;
@@ -709,6 +713,9 @@ module cv32e41p_id_stage
       IMMB_CSRLI:  imm_b = imm_csrli_type;
       IMMB_CANDI:  imm_b = imm_candi_type;
       IMMB_CLUI:   imm_b = imm_clui_type;
+      IMMB_CLSB:   imm_b = imm_clsb_type;
+      IMMB_CLSH:   imm_b = imm_clsh_type;
+      IMMB_ONES:   imm_b = {32{1'b1}};
       default:     imm_b = imm_i_type;
     endcase
   end
@@ -835,8 +842,13 @@ module cv32e41p_id_stage
     endcase
   end
 
-  assign imm_vec_ext_id = imm_vu_type[1:0];
 
+  always_comb begin
+    unique case (vec_ext_id_mux_sel)
+      IMM_ZERO: imm_vec_ext_id = '0;
+      IMM_VU:   imm_vec_ext_id = imm_vu_type[1:0];
+    endcase
+  end
 
   always_comb begin
     unique case (mult_imm_mux)
@@ -1072,6 +1084,8 @@ module cv32e41p_id_stage
       .regc_mux_o            (regc_mux),
       .is_clpx_o             (is_clpx),
       .is_subrot_o           (is_subrot),
+      .vec_ext_id_mux_sel_o  (vec_ext_id_mux_sel),
+
 
       // MUL signals
       .mult_operator_o   (mult_operator),
@@ -1824,8 +1838,7 @@ module cv32e41p_id_stage
                                                            (alu_operator != ALU_BCLR) && (alu_operator != ALU_BSET) &&
                                                            (alu_operator != ALU_BREV) && (alu_operator != ALU_FF1) &&
                                                            (alu_operator != ALU_FL1) && (alu_operator != ALU_CNT) &&
-                                                           (alu_operator != ALU_CLB) && (alu_operator != ALU_EXTS) &&
-                                                           (alu_operator != ALU_EXT) && (alu_operator != ALU_LES) &&
+                                                           (alu_operator != ALU_CLB) && (alu_operator != ALU_LES) &&
                                                            (alu_operator != ALU_LEU) && (alu_operator != ALU_GTS) &&
                                                            (alu_operator != ALU_GTU) && (alu_operator != ALU_SLETS) &&
                                                            (alu_operator != ALU_SLETU) && (alu_operator != ALU_ABS) &&
@@ -1837,13 +1850,19 @@ module cv32e41p_id_stage
                                                            (alu_operator != ALU_PCKHI) );
       endproperty
 
+      property p_alu_op;
+        @(posedge clk) disable iff (!rst_n && Zcee) (1'b1) |-> ( (alu_operator != ALU_EXT) && (alu_operator != ALU_EXTS) );
+      endproperty
+
       a_alu_op :
       assert property (p_alu_op);
 
       // Check that certain vector modes are not used when PULP extension is not enabled
-      property p_vector_mode;
-        @(posedge clk) disable iff (!rst_n) (1'b1) |-> ( (alu_vec_mode != VEC_MODE8 ) && (alu_vec_mode != VEC_MODE16 ) );
-      endproperty
+      if (!Zcee) begin
+        property p_vector_mode;
+          @(posedge clk) disable iff (!rst_n) (1'b1) |-> ( (alu_vec_mode != VEC_MODE8 ) && (alu_vec_mode != VEC_MODE16 ) );
+        endproperty
+      end
 
       a_vector_mode :
       assert property (p_vector_mode);
