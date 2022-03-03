@@ -79,18 +79,18 @@ module cv32e41p_fifo #(
       gate_clock = 1'b0;
       // increment the write counter
       if (write_pointer_q == FIFO_DEPTH[ADDR_DEPTH-1:0] - 1) write_pointer_n = '0;
-      else write_pointer_n = write_pointer_q + 1;
+      else write_pointer_n = write_pointer_q + 1'b1;
       // increment the overall counter
-      status_cnt_n = status_cnt_q + 1;
+      status_cnt_n = status_cnt_q + 1'b1;
     end
 
     if (pop_i && ~empty_o) begin
       // read from the queue is a default assignment
       // but increment the read pointer...
       if (read_pointer_n == FIFO_DEPTH[ADDR_DEPTH-1:0] - 1) read_pointer_n = '0;
-      else read_pointer_n = read_pointer_q + 1;
+      else read_pointer_n = read_pointer_q + 1'b1;
       // ... and decrement the overall count
-      status_cnt_n = status_cnt_q - 1;
+      status_cnt_n = status_cnt_q - 1'b1;
     end
 
     // keep the count pointer stable if we push and pop at the same time
@@ -124,7 +124,7 @@ module cv32e41p_fifo #(
         // Flush the FIFO but keep the first instruction alive if present
         flush_but_first_i: begin
           read_pointer_q  <= (status_cnt_q > 0) ? read_pointer_q : '0;
-          write_pointer_q <= (status_cnt_q > 0) ? read_pointer_q + 1 : '0;
+          write_pointer_q <= (status_cnt_q > 0) ? read_pointer_q + 1'b1 : '0;
           status_cnt_q    <= (status_cnt_q > 0) ? 1'b1 : '0;
         end
         // If we are not flushing, update the pointers
