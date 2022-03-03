@@ -309,7 +309,7 @@ module cv32e41p_mult
   ) + $signed(
       accumulator
   );
-  assign clpx_shift_result = $signed(dot_short_result[31:15]) >>> clpx_shift_i;
+  assign clpx_shift_result = 16'($signed(dot_short_result[31:15]) >>> clpx_shift_i);
 
   ////////////////////////////////////////////////////////
   //   ____                 _ _     __  __              //

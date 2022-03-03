@@ -112,7 +112,7 @@ module cv32e41p_alu_div #(
   // counter
   ///////////////////////////////////////////////////////////////////////////////
 
-  assign Cnt_DN = (LoadEn_S) ? OpBShift_DI : (~CntZero_S) ? Cnt_DP - 1 : Cnt_DP;
+  assign Cnt_DN = (LoadEn_S) ? OpBShift_DI : (~CntZero_S) ? Cnt_DP - 6'b1 : Cnt_DP;
 
   assign CntZero_S = ~(|Cnt_DP);
 
