@@ -35,6 +35,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
   parameter PULP_CLUSTER      = 0,
   parameter A_EXTENSION       = 0,
   parameter FPU               = 0,
+  parameter ZFINX             = 0,
   parameter PULP_SECURE       = 0,
   parameter USE_PMP           = 0,
   parameter APU_WOP_CPU       = 6,
@@ -1650,7 +1651,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   fp_op_group = NONCOMP;
                   check_fprm  = 1'b0; // instruction encoded in rm, do the check here
                   // fmv.x.fmt - FPR to GPR Move
-                  if (instr_rdata_i[14:12] == 3'b000 || (C_XF16ALT && instr_rdata_i[14:12] == 3'b100)) begin
+                  if (ZFINX == 1'b0 && (instr_rdata_i[14:12] == 3'b000 || (C_XF16ALT && instr_rdata_i[14:12] == 3'b100))) begin
                     alu_op_b_mux_sel_o  = OP_B_REGA_OR_FWD; // set rs2 = rs1 so we can map FMV to SGNJ in the unit
                     fpu_op              = cv32e41p_fpu_pkg::SGNJ; // mapped to SGNJ-passthrough since no recoding
                     fpu_op_mod          = 1'b1;    // sign-extend result
@@ -1685,7 +1686,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                   fp_op_group         = NONCOMP;
                   fp_rnd_mode_o       = 3'b011;  // passthrough without checking nan-box
                   check_fprm          = 1'b0; // instruction encoded in rm, do the check here
-                  if (instr_rdata_i[14:12] == 3'b000 || (C_XF16ALT && instr_rdata_i[14:12] == 3'b100)) begin
+                  if (ZFINX == 1'b0 && (instr_rdata_i[14:12] == 3'b000 || (C_XF16ALT && instr_rdata_i[14:12] == 3'b100))) begin
                     // FP16ALT uses special encoding here
                     if (instr_rdata_i[14]) begin
                       fpu_dst_fmt_o = cv32e41p_fpu_pkg::FP16ALT;
@@ -1930,7 +1931,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
           end
 
           OPCODE_LOAD_FP: begin
-            if (FPU==1) begin
+            if (FPU==1 && ZFINX==1'b0) begin
               data_req            = 1'b1;
               regfile_mem_we      = 1'b1;
               reg_fp_d_o          = 1'b1;
@@ -2657,7 +2658,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               end
             // c.fld -> fld rd', imm(rs1')
               3'b001: begin
-                if (FPU == 1'b1 && C_RVD) begin
+                if (FPU == 1'b1 && C_RVD && ZFINX==1'b0) begin
                   data_req            = 1'b1;
                   regfile_mem_we      = 1'b1;
                   reg_fp_d_o          = 1'b1;
@@ -2713,7 +2714,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               end
             // c.flw -> flw rd', imm(rs1')
               3'b011: begin
-                if (FPU == 1'b1) begin
+                if (FPU == 1'b1 && ZFINX == 1'b0) begin
                   data_req            = 1'b1;
                   regfile_mem_we      = 1'b1;
                   reg_fp_d_o          = 1'b1;
@@ -2784,7 +2785,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               end
             // c.fsd -> fsd rs2', imm(rs1')
               3'b101: begin
-                if (FPU==1) begin
+                if (FPU==1 && C_RVD && ZFINX == 1'b0) begin
                   data_req            = 1'b1;
                   data_we_o           = 1'b1;
                   rega_used_o         = 1'b1;
@@ -2837,7 +2838,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               end
             // c.fsw -> fsw rs2', imm(rs1')
               3'b111: begin
-                if (FPU==1 && C_RVF) begin
+                if (FPU==1 && C_RVF && ZFINX == 1'b0) begin
                   data_req            = 1'b1;
                   data_we_o           = 1'b1;
                   rega_used_o         = 1'b1;
@@ -3111,7 +3112,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
 
               3'b001: begin
                 // c.fldsp -> fld rd, imm(x2)
-                if (FPU==1 && C_RVD)
+                if (FPU==1 && C_RVD && ZFINX == 1'b0)
                 begin // instr_i[6:5] -> offset[4:3], instr_i[4:2] -> offset[8:6], instr_i[12] -> offset[5]
                   data_req            = 1'b1;
                   regfile_mem_we      = 1'b1;
@@ -3168,7 +3169,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
 
               3'b011: begin
                 // c.flwsp -> flw rd, imm(x2)
-                if (FPU == 1 && C_RVF) begin
+                if (FPU == 1 && C_RVF && ZFINX == 1'b0) begin
                   data_req            = 1'b1;
                   regfile_mem_we      = 1'b1;
                   reg_fp_d_o          = 1'b1;
@@ -3270,7 +3271,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               3'b101: begin
                 // c.fsdsp -> fsd rs2, imm(x2)
                 // instr_i[12:10] -> offset[5:3], instr_i[9:7] -> offset[8:6]
-                if (FPU == 1 && C_RVD)  begin
+                if (FPU == 1 && C_RVD && ZFINX == 1'b0)  begin
                   data_req            = 1'b1;
                   data_we_o           = 1'b1;
                   rega_used_o         = 1'b1;
@@ -3309,7 +3310,7 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
 
               3'b111: begin
                 // c.fswsp -> fsw rs2, imm(x2)
-                if (FPU == 1 && C_RVF) begin
+                if (FPU == 1 && C_RVF && ZFINX == 1'b0) begin
                   data_req            = 1'b1;
                   data_we_o           = 1'b1;
                   rega_used_o         = 1'b1;
