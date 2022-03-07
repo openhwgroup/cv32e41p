@@ -44,7 +44,7 @@ module cv32e41p_id_stage
     parameter A_EXTENSION = 0,
     parameter APU = 0,
     parameter FPU = 0,
-    parameter PULP_ZFINX = 0,
+    parameter ZFINX = 0,
     parameter APU_NARGS_CPU = 3,
     parameter APU_WOP_CPU = 6,
     parameter APU_NDSFLAGS_CPU = 15,
@@ -563,7 +563,7 @@ module cv32e41p_id_stage
   //-- FPU Register file enable:
   //-- Taken from Cluster Config Reg if FPU reg file exists, or always disabled
   //-----------------------------------------------------------------------------
-  assign fregfile_ena = FPU && !PULP_ZFINX ? 1'b1 : 1'b0;
+  assign fregfile_ena = FPU && !ZFINX ? 1'b1 : 1'b0;
 
   //---------------------------------------------------------------------------
   // source register selection regfile_fp_x=1 <=> CV32E40P_REG_x is a FP-register
@@ -976,7 +976,7 @@ module cv32e41p_id_stage
       .ADDR_WIDTH(6),
       .DATA_WIDTH(32),
       .FPU       (FPU),
-      .PULP_ZFINX(PULP_ZFINX)
+      .ZFINX     (ZFINX)
   ) register_file_i (
       .clk  (clk),
       .rst_n(rst_n),
@@ -1025,6 +1025,7 @@ module cv32e41p_id_stage
       .PULP_CLUSTER    (PULP_CLUSTER),
       .A_EXTENSION     (A_EXTENSION),
       .FPU             (FPU),
+      .ZFINX           (ZFINX),
       .PULP_SECURE     (PULP_SECURE),
       .USE_PMP         (USE_PMP),
       .APU_WOP_CPU     (APU_WOP_CPU),

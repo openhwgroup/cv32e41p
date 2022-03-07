@@ -38,7 +38,7 @@ module cv32e41p_core
     parameter Zceb = 0,  // 
     parameter Zcec = 0,  // 
     parameter Zcee = 0,  // 
-    parameter PULP_ZFINX = 0,  // Float-in-General Purpose registers
+    parameter ZFINX = 0,  // Float-in-General Purpose registers
     parameter NUM_MHPMCOUNTERS = 1
 ) (
     // Clock and Reset
@@ -525,7 +525,7 @@ module cv32e41p_core
       .A_EXTENSION     (A_EXTENSION),
       .APU             (APU),
       .FPU             (FPU),
-      .PULP_ZFINX      (PULP_ZFINX),
+      .ZFINX           (ZFINX),
       .APU_NARGS_CPU   (APU_NARGS_CPU),
       .APU_WOP_CPU     (APU_WOP_CPU),
       .APU_NDSFLAGS_CPU(APU_NDSFLAGS_CPU),
@@ -938,6 +938,7 @@ module cv32e41p_core
   cv32e41p_cs_registers #(
       .A_EXTENSION     (A_EXTENSION),
       .FPU             (FPU),
+      .ZFINX           (ZFINX),
       .APU             (APU),
       .PULP_SECURE     (PULP_SECURE),
       .USE_PMP         (USE_PMP),
@@ -1138,7 +1139,7 @@ module cv32e41p_core
   // Assertions
   //----------------------------------------------------------------------------
 
-  // PULP_XPULP, PULP_CLUSTER, FPU, PULP_ZFINX
+  // PULP_XPULP, PULP_CLUSTER, FPU, ZFINX
   always_ff @(posedge rst_ni) begin
     if (PULP_XPULP) begin
       $warning(
@@ -1150,8 +1151,8 @@ module cv32e41p_core
     if (FPU) begin
       $warning("FPU == 1 has not been verified yet");
     end
-    if (PULP_ZFINX) begin
-      $warning("PULP_ZFINX == 1 has not been verified yet");
+    if (ZFINX) begin
+      $warning("ZFINX == 1 has not been verified yet");
     end
   end
 
