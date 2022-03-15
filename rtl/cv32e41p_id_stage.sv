@@ -257,9 +257,6 @@ module cv32e41p_id_stage
 
   logic [31:0] instr;
 
-  logic        is_compressed;
-  logic        illegal_c_insn;
-
   // Decoder/Controller ID stage internal signals
   logic        deassert_we;
 
@@ -537,9 +534,12 @@ module cv32e41p_id_stage
   };
   assign imm_clui_type = {{14{instr[12]}}, instr[12:12], instr[6:2], 12'b0};
 
+  assign imm_clsb_type = {28'd0, instr[10], instr[6:5], instr[11]};
+  assign imm_clsh_type = {27'd0, instr[11:10], instr[6:5], 1'b0};
+
   assign imm_iz_type = {20'b0, instr[31:20]};
 
-  // immediate for CSR manipulatin (zero extended) Used only in 32 bit instructions !
+  // immediate for CSR manipulatin (zero extended) Used only in 32 bit instructions ! 
   assign imm_z_type = {27'b0, instr[REG_S1_MSB:REG_S1_LSB]};
 
   // PULP Immediate formats
@@ -1066,10 +1066,6 @@ module cv32e41p_id_stage
 
       // from IF/ID pipeline
       .instr_rdata_i(instr),
-
-      // Compressed decoder output
-      .is_compressed_o (is_compressed),
-      .illegal_c_insn_o(illegal_c_insn),
 
       // ALU signals
       .alu_en_o              (alu_en),

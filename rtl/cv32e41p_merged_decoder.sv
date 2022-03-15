@@ -78,10 +78,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
   // from IF/ID pipeline
   input  logic [31:0] instr_rdata_i,           // instruction read from instr memory/cache
 
-
-  output  logic        is_compressed_o,        // compressed instruction decode failed
-  output  logic        illegal_c_insn_o,        // compressed instruction decode failed
-
   // ALU signals
   output logic        alu_en_o,                // ALU enable
   output alu_opcode_e alu_operator_o, // ALU operation selection
@@ -306,11 +302,9 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
     addr_rb_id_o                  = 5'd0;
     waddr_id_o                    = 5'd0;
 
-    illegal_c_insn_o = 1'b0;
-
-    // 32 bit instruction
-    if (instr_rdata_i[1:0] == 2'b11) begin
-
+    unique case (instr_rdata_i[1:0])
+      // 32 bit instructions
+      2'b11: begin
         addr_ra_id_o = instr_rdata_i[REG_S1_MSB:REG_S1_LSB];
         addr_rb_id_o = instr_rdata_i[REG_S2_MSB:REG_S2_LSB];
         waddr_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
@@ -2632,718 +2626,701 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               illegal_insn_o = 1'b1;
             end
           end // case: OPCODE_HWLOOP
+        endcase
+      end
+      // C0 16 Bit instructions
+      2'b00: begin
+        unique case (instr_rdata_i[15:13])
+        // c.addi4spn -> addi rd', x2, imm
+          3'b000: begin
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+            imm_b_mux_sel_o     = IMMB_CSPN;
+            addr_ra_id_o        = 5'd2;
+            waddr_id_o          = {2'b01,instr_rdata_i[4:2]};
+            regfile_alu_we      = 1'b1;
+            rega_used_o         = 1'b1;
+            alu_operator_o      = ALU_ADD;
+            if (instr_rdata_i[12:5] == 8'b0) illegal_insn_o = 1'b1;
+          end
+        // c.fld -> fld rd', imm(rs1')
+          3'b001: begin
+            if (FPU == 1'b1 && C_RVD && ZFINX==1'b0) begin
+              data_req            = 1'b1;
+              regfile_mem_we      = 1'b1;
+              reg_fp_d_o          = 1'b1;
+              rega_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              imm_b_mux_sel_o     = IMMB_CLD;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              addr_ra_id_o      = {2'b01,instr_rdata_i[4:2]};
+              waddr_id_o        = {2'b01,instr_rdata_i[9:7]};
+              // NaN boxing
+              data_sign_extension_o = 2'b10;
+              // The orginal decoder mapped into 32bit loads, 64bit loads unsupported
+              data_type_o = 2'b00;
+            end
+            else if (Zceb)
+            begin
+            // C.LBU and C.LHU
+              data_req        = 1'b1;
+              regfile_mem_we  = 1'b1;
+              rega_used_o     = 1'b1;
+              data_type_o         = instr_rdata_i[12] ? 2'b01 : 2'b10;
+            // GPR IDs
+              addr_ra_id_o    = {2'b01,instr_rdata_i[9:7]};
+              waddr_id_o      = {2'b01,instr_rdata_i[4:2]};
+              // offset from immediate
+              alu_operator_o      = ALU_ADD;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+              imm_b_mux_sel_o     = instr_rdata_i[12] ? IMMB_CLSH : IMMB_CLSB;
+              data_sign_extension_o = 2'b00;
+
+            end
+            else
+              illegal_insn_o = 1'b1;
+          end
+        // c.lw -> lw rd', imm(rs1')
+          3'b010: begin
+            data_req        = 1'b1;
+            regfile_mem_we  = 1'b1;
+            rega_used_o     = 1'b1;
+            data_type_o     = 2'b00;
+            // offset from immediate
+            alu_operator_o      = ALU_ADD;
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+            imm_b_mux_sel_o     = IMMB_CLW;
+
+            waddr_id_o        = {2'b01,instr_rdata_i[4:2]};
+            addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
+
+            data_sign_extension_o = 2'b01;
+
+            data_type_o = 2'b00; // LW
+          end
+        // c.flw -> flw rd', imm(rs1')
+          3'b011: begin
+            if (FPU == 1'b1 && ZFINX == 1'b0) begin
+              data_req            = 1'b1;
+              regfile_mem_we      = 1'b1;
+              reg_fp_d_o          = 1'b1;
+              rega_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              imm_b_mux_sel_o     = IMMB_CLW;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              waddr_id_o          = {2'b01,instr_rdata_i[4:2]};
+              addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+              // NaN boxing
+              data_sign_extension_o = 2'b10;
+              // The orginal decoder mapped into 32bit loads, 64bit loads unsupported
+              data_type_o = 2'b00;
+            end
+            else
+              illegal_insn_o = 1'b1;
+          end
+          3'b100: begin
+            if (Zcee) begin
+              regfile_alu_we = 1'b1;
+              rega_used_o    = 1'b1;
+              addr_ra_id_o   = {2'b01,instr_rdata_i[9:7]};
+              waddr_id_o     = {2'b01,instr_rdata_i[9:7]};
+              vec_ext_id_mux_sel_o = IMM_ZERO;
+              if (instr_rdata_i[12:10] == 3'b000)
+                unique case (instr_rdata_i[4:2])
+                      //C.ZEXT.B
+                    3'b000: begin
+                      alu_operator_o = ALU_EXT;
+                      alu_vec_mode_o = VEC_MODE8;
+                    end
+                      //C.SEXT.B
+                    3'b001: begin
+                      alu_operator_o = ALU_EXTS;
+                      alu_vec_mode_o = VEC_MODE8;
+                    end
+                      //C.ZEXT.H
+                    3'b010: begin
+                      alu_operator_o = ALU_EXT;
+                      alu_vec_mode_o = VEC_MODE16;
+                    end
+                      //C.SEXT.H
+                    3'b011: begin
+                      alu_operator_o = ALU_EXTS;
+                      alu_vec_mode_o = VEC_MODE16;
+                    end
+                      //C.NEG
+                    3'b110: begin
+                      alu_operator_o = ALU_SUB;
+                      regb_used_o    = 1'b1;
+                      addr_ra_id_o   = 5'd0;
+                      addr_rb_id_o   = {2'b01,instr_rdata_i[9:7]};
+                    end
+                      //C.NOT
+                    3'b111: begin
+                      alu_operator_o   = ALU_XOR;
+                      imm_b_mux_sel_o  = IMMB_ONES;
+                      alu_op_b_mux_sel_o = OP_B_IMM;
+                      addr_ra_id_o   = {2'b01,instr_rdata_i[9:7]};
+                    end
+                    default:
+                      illegal_insn_o = 1'b1;
+                endcase
+              else illegal_insn_o = 1'b1;
+            end
+          else illegal_insn_o = 1'b1;
+          end
+        // c.fsd -> fsd rs2', imm(rs1')
+          3'b101: begin
+            if (FPU==1 && C_RVD && ZFINX == 1'b0) begin
+              data_req            = 1'b1;
+              data_we_o           = 1'b1;
+              rega_used_o         = 1'b1;
+              regb_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              reg_fp_b_o          = 1'b1;
+              imm_b_mux_sel_o     = IMMB_CLD;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
+              addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
+              // pass write data through ALU operand c
+              alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+            end
+            else if (Zceb)
+            begin
+                  // C.SH and C.SB
+              data_req       = 1'b1;
+              data_we_o      = 1'b1;
+              rega_used_o    = 1'b1;
+              regb_used_o    = 1'b1;
+              addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
+              addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
+              alu_operator_o = ALU_ADD;
+              // pass write data through ALU operand c
+              alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+              data_type_o = instr_rdata_i[12] ? 2'b01 : 2'b10;
+              // offset from immediate
+              imm_b_mux_sel_o     = instr_rdata_i[12] ? IMMB_CLSH : IMMB_CLSB;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+            end
+            else
+              illegal_insn_o = 1'b1;
+          end
+        // c.sw -> sw rs2', imm(rs1')
+          3'b110: begin
+            data_req       = 1'b1;
+            data_we_o      = 1'b1;
+            rega_used_o    = 1'b1;
+            regb_used_o    = 1'b1;
+            alu_operator_o = ALU_ADD;
+            alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+            data_type_o = 2'b00; // SW
+            imm_b_mux_sel_o     = IMMB_CLW;
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+
+            addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
+            addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
+
+          end
+        // c.fsw -> fsw rs2', imm(rs1')
+          3'b111: begin
+            if (FPU==1 && C_RVF && ZFINX == 1'b0) begin
+              data_req            = 1'b1;
+              data_we_o           = 1'b1;
+              rega_used_o         = 1'b1;
+              regb_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              reg_fp_b_o          = 1'b1;
+              imm_b_mux_sel_o     = IMMB_CLW;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
+              addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
+              // pass write data through ALU operand c
+              alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+              data_type_o = 2'b00;
+            end
+            else
+              illegal_insn_o = 1'b1;
+          end
           default: begin
             illegal_insn_o = 1'b1;
           end
-
         endcase
-    end
-      else if (is_compressed_o)
-      // Compressed decoder !
-        illegal_c_insn_o = 1'b0;
-        unique case (instr_rdata_i[1:0])
-          // C0
-          2'b00: begin
-            unique case (instr_rdata_i[15:13])
-            // c.addi4spn -> addi rd', x2, imm
-              3'b000: begin
+      end
+      // C1 16 Bit instructions
+      2'b01: begin
+        illegal_insn_o = 1'b0;
+        unique case (instr_rdata_i[15:13])
+          3'b000: begin
+            // c.addi -> addi rd, rd, nzimm
+            // c.nop
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+            imm_b_mux_sel_o     = IMMB_CANDI;
+            regfile_alu_we      = 1'b1;
+            rega_used_o         = 1'b1;
+            alu_operator_o      = ALU_ADD;
+
+            addr_ra_id_o      = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+            waddr_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+          end
+
+          3'b001, 3'b101: begin
+            // 001: c.jal -> jal x1, imm
+            // 101: c.j   -> jal x0, imm
+            ctrl_transfer_target_mux_sel_o = JT_CJAL;
+            ctrl_transfer_insn    = BRANCH_JAL;
+            // Calculate and store PC+4
+            alu_op_a_mux_sel_o  = OP_A_CURRPC;
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+            imm_b_mux_sel_o     = IMMB_PCINCR;
+            alu_operator_o      = ALU_ADD;
+            regfile_alu_we      = 1'b1;
+            waddr_id_o          = instr_rdata_i[15] ? 5'd0 : 5'd1;
+
+          end
+
+          3'b010: begin
+            // c.li
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+            //  { {26{instr[12]}},instr[12:12],instr[6:2] }
+            imm_b_mux_sel_o     = IMMB_CANDI;
+            regfile_alu_we      = 1'b1;
+            waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+            rega_used_o         = 1'b1;
+            alu_operator_o = ALU_ADD;
+          end
+
+          3'b011: begin
+            if ({instr_rdata_i[12], instr_rdata_i[6:2]} == 6'b0) begin
+              illegal_insn_o = 1'b1;
+            end else begin
+              if (instr_rdata_i[11:7] == 5'h02) begin
+                // c.addi16sp -> addi x2, x2, nzimm
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-                imm_b_mux_sel_o     = IMMB_CSPN;
-                addr_ra_id_o        = 5'd2;
-                waddr_id_o          = {2'b01,instr_rdata_i[4:2]};
+                imm_b_mux_sel_o     = IMMB_CADDI;
                 regfile_alu_we      = 1'b1;
                 rega_used_o         = 1'b1;
-                alu_operator_o      = ALU_ADD;
-                if (instr_rdata_i[12:5] == 8'b0) illegal_c_insn_o = 1'b1;
-              end
-            // c.fld -> fld rd', imm(rs1')
-              3'b001: begin
-                if (FPU == 1'b1 && C_RVD && ZFINX==1'b0) begin
-                  data_req            = 1'b1;
-                  regfile_mem_we      = 1'b1;
-                  reg_fp_d_o          = 1'b1;
-                  rega_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  imm_b_mux_sel_o     = IMMB_CLD;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  addr_ra_id_o      = {2'b01,instr_rdata_i[4:2]};
-                  waddr_id_o        = {2'b01,instr_rdata_i[9:7]};
-                  // NaN boxing
-                  data_sign_extension_o = 2'b10;
-                  // The orginal decoder mapped into 32bit loads, 64bit loads unsupported
-                  data_type_o = 2'b00;
-                end
-                else if (Zceb)
-                begin
-                // C.LBU and C.LHU
-                  data_req        = 1'b1;
-                  regfile_mem_we  = 1'b1;
-                  rega_used_o     = 1'b1;
-                  data_type_o         = instr_rdata_i[12] ? 2'b01 : 2'b10;
-                // GPR IDs
-                  addr_ra_id_o    = {2'b01,instr_rdata_i[9:7]};
-                  waddr_id_o      = {2'b01,instr_rdata_i[4:2]};
-                  // offset from immediate
-                  alu_operator_o      = ALU_ADD;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-                  imm_b_mux_sel_o     = instr_rdata_i[12] ? IMMB_CLSH : IMMB_CLSB;
-                  data_sign_extension_o = 2'b00;
-                  
-                end
-                else
-                  illegal_c_insn_o = 1'b1;
-              end
-            // c.lw -> lw rd', imm(rs1')
-              3'b010: begin
-                data_req        = 1'b1;
-                regfile_mem_we  = 1'b1;
-                rega_used_o     = 1'b1;
-                data_type_o     = 2'b00;
-                // offset from immediate
-                alu_operator_o      = ALU_ADD;
-                alu_op_b_mux_sel_o  = OP_B_IMM;
-                imm_b_mux_sel_o     = IMMB_CLW;
-
-                waddr_id_o        = {2'b01,instr_rdata_i[4:2]};
-                addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
-
-                data_sign_extension_o = 2'b01;
-
-                data_type_o = 2'b00; // LW
-              end
-            // c.flw -> flw rd', imm(rs1')
-              3'b011: begin
-                if (FPU == 1'b1 && ZFINX == 1'b0) begin
-                  data_req            = 1'b1;
-                  regfile_mem_we      = 1'b1;
-                  reg_fp_d_o          = 1'b1;
-                  rega_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  imm_b_mux_sel_o     = IMMB_CLW;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  waddr_id_o          = {2'b01,instr_rdata_i[4:2]};
-                  addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                  // NaN boxing
-                  data_sign_extension_o = 2'b10;
-                  // The orginal decoder mapped into 32bit loads, 64bit loads unsupported
-                  data_type_o = 2'b00;
-                end
-                else
-                  illegal_c_insn_o = 1'b1;
-              end
-              3'b100: begin
-                if (Zcee) begin
-                  regfile_alu_we = 1'b1;
-                  rega_used_o    = 1'b1;
-                  addr_ra_id_o   = {2'b01,instr_rdata_i[9:7]};
-                  waddr_id_o     = {2'b01,instr_rdata_i[9:7]};
-                  vec_ext_id_mux_sel_o = IMM_ZERO;
-                  if (instr_rdata_i[12:10] == 3'b000)
-                    unique case (instr_rdata_i[4:2])
-                      //C.ZEXT.B
-                        3'b000: begin
-                          alu_operator_o = ALU_EXT;
-                          alu_vec_mode_o = VEC_MODE8;
-                        end
-                      //C.SEXT.B
-                        3'b001: begin
-                          alu_operator_o = ALU_EXTS;
-                          alu_vec_mode_o = VEC_MODE8;
-                        end
-                      //C.ZEXT.H
-                        3'b010: begin
-                          alu_operator_o = ALU_EXT;
-                          alu_vec_mode_o = VEC_MODE16;
-                        end
-                      //C.SEXT.H
-                        3'b011: begin
-                          alu_operator_o = ALU_EXTS;
-                          alu_vec_mode_o = VEC_MODE16;
-                        end
-                      //C.NEG
-                        3'b110: begin
-                          alu_operator_o = ALU_SUB;
-                          regb_used_o    = 1'b1;
-                          addr_ra_id_o   = 5'd0;
-                          addr_rb_id_o   = {2'b01,instr_rdata_i[9:7]};
-                        end
-                      //C.NOT
-                        3'b111: begin
-                          alu_operator_o   = ALU_XOR;
-                          imm_b_mux_sel_o  = IMMB_ONES;
-                          alu_op_b_mux_sel_o = OP_B_IMM;
-                          addr_ra_id_o   = {2'b01,instr_rdata_i[9:7]};
-                        end
-                        default:
-                          illegal_c_insn_o = 1'b1;
-                    endcase
-                  else illegal_c_insn_o = 1'b1;
-                end
-              else illegal_c_insn_o = 1'b1;
-              end
-            // c.fsd -> fsd rs2', imm(rs1')
-              3'b101: begin
-                if (FPU==1 && C_RVD && ZFINX == 1'b0) begin
-                  data_req            = 1'b1;
-                  data_we_o           = 1'b1;
-                  rega_used_o         = 1'b1;
-                  regb_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  reg_fp_b_o          = 1'b1;
-                  imm_b_mux_sel_o     = IMMB_CLD;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
-                  addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
-                  // pass write data through ALU operand c
-                  alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-                end
-                else if (Zceb)
-                begin
-                  // C.SH and C.SB
-                  data_req       = 1'b1;
-                  data_we_o      = 1'b1;
-                  rega_used_o    = 1'b1;
-                  regb_used_o    = 1'b1;
-                  addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
-                  addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
-                  alu_operator_o = ALU_ADD;
-                  // pass write data through ALU operand c
-                  alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-                  data_type_o = instr_rdata_i[12] ? 2'b01 : 2'b10;
-                  // offset from immediate
-                  imm_b_mux_sel_o     = instr_rdata_i[12] ? IMMB_CLSH : IMMB_CLSB;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-                end
-                else
-                  illegal_c_insn_o = 1'b1;
-              end
-            // c.sw -> sw rs2', imm(rs1')
-              3'b110: begin
-                data_req       = 1'b1;
-                data_we_o      = 1'b1;
-                rega_used_o    = 1'b1;
-                regb_used_o    = 1'b1;
+                waddr_id_o          = 5'd2;
+                addr_ra_id_o        = 5'd2;
                 alu_operator_o = ALU_ADD;
-                alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-                data_type_o = 2'b00; // SW
-                imm_b_mux_sel_o     = IMMB_CLW;
+
+              end else if (instr_rdata_i[11:7] == 5'b0) begin
+                // Hint -> lui x0, imm
+                alu_op_a_mux_sel_o  = OP_A_IMM;
                 alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
-                addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
-
+                imm_a_mux_sel_o     = IMMA_ZERO;
+                imm_b_mux_sel_o     = IMMB_CLUI;
+                alu_operator_o      = ALU_ADD;
+                regfile_alu_we      = 1'b1;
+              end else begin
+                // c.lui -> lui rd, imm
+                alu_op_a_mux_sel_o  = OP_A_IMM;
+                alu_op_b_mux_sel_o  = OP_B_IMM;
+                imm_a_mux_sel_o     = IMMA_ZERO;
+                imm_b_mux_sel_o     = IMMB_CLUI;
+                alu_operator_o      = ALU_ADD;
+                regfile_alu_we      = 1'b1;
+                waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
               end
-            // c.fsw -> fsw rs2', imm(rs1')
-              3'b111: begin
-                if (FPU==1 && C_RVF && ZFINX == 1'b0) begin
-                  data_req            = 1'b1;
-                  data_we_o           = 1'b1;
-                  rega_used_o         = 1'b1;
-                  regb_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  reg_fp_b_o          = 1'b1;
-                  imm_b_mux_sel_o     = IMMB_CLW;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  addr_ra_id_o      = {2'b01,instr_rdata_i[9:7]};
-                  addr_rb_id_o      = {2'b01,instr_rdata_i[4:2]};
-                  // pass write data through ALU operand c
-                  alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-                  data_type_o = 2'b00;
-                end
-                else
-                  illegal_c_insn_o = 1'b1;
-              end
-              default: begin
-                illegal_c_insn_o = 1'b1;
-              end
-            endcase
+            end
           end
-          // C1
-          2'b01: begin
-            illegal_c_insn_o = 1'b0;
-            unique case (instr_rdata_i[15:13])
-              3'b000: begin
-                // c.addi -> addi rd, rd, nzimm
-                // c.nop
+
+          3'b100: begin
+            unique case (instr_rdata_i[11:10])
+              // 00: c.srli -> srli rd, rd, shamt
+              2'b00: begin
+                alu_op_b_mux_sel_o  = OP_B_IMM;
+                imm_b_mux_sel_o     = IMMB_CSRLI;
+                regfile_alu_we      = 1'b1;
+                rega_used_o         = 1'b1;
+                addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                alu_operator_o = ALU_SRL;
+                if (instr_rdata_i[12] == 1'b1) begin
+                  illegal_insn_o = 1'b1;
+                end
+              end
+              // 01: c.srai -> srai rd, rd, shamt
+              2'b01: begin
+                alu_op_b_mux_sel_o  = OP_B_IMM;
+                //  IMMEDIATE { 26'b0,instr[12:12],instr[6:2] }
+                imm_b_mux_sel_o     = IMMB_CSRLI;
+                regfile_alu_we      = 1'b1;
+                rega_used_o         = 1'b1;
+                addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                alu_operator_o = ALU_SRA;
+                if (instr_rdata_i[12] == 1'b1) begin
+                  illegal_insn_o = 1'b1;
+                end
+              end
+                // c.andi -> andi rd, rd, imm
+              2'b10: begin
                 alu_op_b_mux_sel_o  = OP_B_IMM;
                 imm_b_mux_sel_o     = IMMB_CANDI;
                 regfile_alu_we      = 1'b1;
                 rega_used_o         = 1'b1;
-                alu_operator_o      = ALU_ADD;
-
-                addr_ra_id_o      = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                waddr_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+                addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                alu_operator_o = ALU_AND;
               end
+              2'b11: begin
 
-              3'b001, 3'b101: begin
-                // 001: c.jal -> jal x1, imm
-                // 101: c.j   -> jal x0, imm
-                ctrl_transfer_target_mux_sel_o = JT_CJAL;
-                ctrl_transfer_insn    = BRANCH_JAL;
+                unique case ({instr_rdata_i[12], instr_rdata_i[6:5]})
+                    3'b000: begin
+                      // c.sub -> sub rd', rd', rs2'
+                      regfile_alu_we = 1'b1;
+                      rega_used_o    = 1'b1;
+                      regb_used_o    = 1'b1;
+                      addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                      addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
+                      waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                      alu_operator_o = ALU_SUB;
+                    end
+
+                    3'b001: begin
+                      // c.xor -> xor rd', rd', rs2'
+                      regfile_alu_we = 1'b1;
+                      rega_used_o    = 1'b1;
+                      regb_used_o    = 1'b1;
+                      addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                      addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
+                      waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                      alu_operator_o = ALU_XOR;
+                    end
+
+                    3'b010: begin
+                      // c.or  -> or  rd', rd', rs2'
+                      regfile_alu_we = 1'b1;
+                      rega_used_o    = 1'b1;
+                      regb_used_o    = 1'b1;
+                      addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                      addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
+                      waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                      alu_operator_o = ALU_OR;
+                    end
+
+                    3'b011: begin
+                      // c.and -> and rd', rd', rs2'
+                      regfile_alu_we = 1'b1;
+                      rega_used_o    = 1'b1;
+                      regb_used_o    = 1'b1;
+                      addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                      addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
+                      waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+                      alu_operator_o = ALU_AND;
+                    end
+                      // c.mul -> mul rd', rd', rs2'
+                    3'b110: begin
+                      if (Zcee) begin
+                        regfile_alu_we = 1'b1;
+                        rega_used_o    = 1'b1;
+                        regb_used_o    = 1'b1;
+
+                        addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
+                        addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
+                        waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
+
+                        alu_en          = 1'b0;
+                        mult_int_en     = 1'b1;
+                        mult_operator_o = MUL_MAC32;
+                        regc_mux_o      = REGC_ZERO;
+                      end
+                      else
+                        illegal_insn_o = 1'b1;
+                    end
+                    3'b100, 3'b101, 3'b111: begin
+                      // 100: c.subw
+                      // 101: c.addw
+                      illegal_insn_o = 1'b1;
+                    end
+                endcase
+              end
+            endcase
+          end
+
+          3'b110: begin
+          // 0: c.beqz -> beq rs1', x0, imm
+          ctrl_transfer_target_mux_sel_o = JT_CCOND;
+          ctrl_transfer_insn    = BRANCH_COND;
+          alu_op_c_mux_sel_o    = OP_C_JT;
+          rega_used_o           = 1'b1;
+          regb_used_o           = 1'b1;
+          addr_ra_id_o          = {2'b01,instr_rdata_i[9:7]};
+          addr_rb_id_o          = 5'd0;
+
+          alu_operator_o        = ALU_EQ;
+          end
+
+          3'b111: begin
+          // 1: c.bnez -> bne rs1', x0, imm
+          ctrl_transfer_target_mux_sel_o = JT_CCOND;
+          ctrl_transfer_insn    = BRANCH_COND;
+          alu_op_c_mux_sel_o    = OP_C_JT;
+          rega_used_o           = 1'b1;
+          regb_used_o           = 1'b1;
+          addr_ra_id_o          = {2'b01,instr_rdata_i[9:7]};
+          addr_rb_id_o          = 5'd0;
+          alu_operator_o        = ALU_NE;
+
+
+          end
+        endcase
+      end
+      // C2 16 Bit instructions
+      2'b10: begin
+        unique case (instr_rdata_i[15:13])
+          3'b000: begin
+            if (instr_rdata_i[12] == 1'b1) begin
+              /* Reserved for future extensions (instr_o don't care)
+                SLLI64 (Generate Illegal Instruction Exception but
+                it tries extend it non the less ?? ) */
+                alu_op_b_mux_sel_o  = OP_B_IMM;
+                imm_b_mux_sel_o     = IMMB_I;
+                regfile_alu_we      = 1'b1;
+                rega_used_o         = 1'b1;
+                addr_ra_id_o        = instr_rdata_i[11:7];
+                waddr_id_o          = instr_rdata_i[11:7];
+                alu_operator_o      = ALU_SLL;
+                illegal_insn_o    = 1'b1;
+            end else begin
+                // SLLI,the immediate format is the same, thats why its called like that !
+                alu_op_b_mux_sel_o  = OP_B_IMM;
+                imm_b_mux_sel_o     = IMMB_CSRLI;
+                regfile_alu_we      = 1'b1;
+                rega_used_o         = 1'b1;
+                addr_ra_id_o        = instr_rdata_i[11:7];
+                waddr_id_o          = instr_rdata_i[11:7];
+                alu_operator_o      = ALU_SLL;
+            end
+          end
+
+          3'b001: begin
+            // c.fldsp -> fld rd, imm(x2)
+            if (FPU==1 && C_RVD && ZFINX == 1'b0)
+            begin // instr_i[6:5] -> offset[4:3], instr_i[4:2] -> offset[8:6], instr_i[12] -> offset[5]
+              data_req            = 1'b1;
+              regfile_mem_we      = 1'b1;
+              reg_fp_d_o          = 1'b1;
+              rega_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              // offset from immediate
+              imm_b_mux_sel_o     = IMMB_CFLDSP;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              addr_ra_id_o        = 5'd2;
+              waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+              // NaN boxing
+              data_sign_extension_o = 2'b10;
+              data_type_o = 2'b00;
+            end
+            else if (Zceb)
+            begin
+                  // C.LB and C.LH
+              data_req        = 1'b1;
+              regfile_mem_we  = 1'b1;
+              rega_used_o     = 1'b1;
+              data_type_o     = instr_rdata_i[12] ? 2'b01 : 2'b10;
+            // GPR IDs
+              addr_ra_id_o    = {2'b01,instr_rdata_i[9:7]};
+              waddr_id_o      = {2'b01,instr_rdata_i[4:2]};
+              // offset from immediate
+              alu_operator_o      = ALU_ADD;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+              imm_b_mux_sel_o     = instr_rdata_i[12] ? IMMB_CLSH : IMMB_CLSB;
+              data_sign_extension_o = 2'b01;
+            end
+            else illegal_insn_o = 1'b1;
+          end
+
+          3'b010: begin
+            // c.lwsp -> lw rd, imm(x2)
+            data_req        = 1'b1;
+            regfile_mem_we  = 1'b1;
+            rega_used_o     = 1'b1;
+            data_type_o     = 2'b00;
+
+            addr_ra_id_o        = 5'd2;
+            waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+            // offset from immediate
+            alu_operator_o      = ALU_ADD;
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+            imm_b_mux_sel_o     = IMMB_CLWSP;
+            data_sign_extension_o = 2'b01;
+            data_type_o = 2'b00;
+
+            if (instr_rdata_i[11:7] == 5'b0) illegal_insn_o = 1'b1;
+          end
+
+          3'b011: begin
+            // c.flwsp -> flw rd, imm(x2)
+            if (FPU == 1 && C_RVF && ZFINX == 1'b0) begin
+              data_req            = 1'b1;
+              regfile_mem_we      = 1'b1;
+              reg_fp_d_o          = 1'b1;
+              rega_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              // offset from immediate
+              //  IMMEDIATE { 24'b0,instr[3:2],instr[12:12],instr[6:4],2'b0},
+              imm_b_mux_sel_o     = IMMB_CLWSP;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              addr_ra_id_o        = 5'd2;
+              waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+              // NaN boxing
+              data_sign_extension_o = 2'b10;
+              data_type_o = 2'b00;
+            end
+            else illegal_insn_o = 1'b1;
+          end
+
+          3'b100: begin
+            if (instr_rdata_i[12] == 1'b0) begin
+              if (instr_rdata_i[6:2] == 5'b0) begin
+                // c.jr -> jalr x0, rd/rs1, 0
+                ctrl_transfer_target_mux_sel_o = JT_CJALR;
+                ctrl_transfer_insn    = BRANCH_JALR;
                 // Calculate and store PC+4
                 alu_op_a_mux_sel_o  = OP_A_CURRPC;
                 alu_op_b_mux_sel_o  = OP_B_IMM;
                 imm_b_mux_sel_o     = IMMB_PCINCR;
                 alu_operator_o      = ALU_ADD;
                 regfile_alu_we      = 1'b1;
-                waddr_id_o          = instr_rdata_i[15] ? 5'd0 : 5'd1;
-
-              end
-
-              3'b010: begin
-                // c.li
-                alu_op_b_mux_sel_o  = OP_B_IMM;
-                //  { {26{instr[12]}},instr[12:12],instr[6:2] }
-                imm_b_mux_sel_o     = IMMB_CANDI;
-                regfile_alu_we      = 1'b1;
-                waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
                 rega_used_o         = 1'b1;
-                alu_operator_o = ALU_ADD;
-              end
 
-              3'b011: begin
-                if ({instr_rdata_i[12], instr_rdata_i[6:2]} == 6'b0) begin
-                  illegal_c_insn_o = 1'b1;
-                end else begin
-                  if (instr_rdata_i[11:7] == 5'h02) begin
-                    // c.addi16sp -> addi x2, x2, nzimm
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_b_mux_sel_o     = IMMB_CADDI;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-                    waddr_id_o          = 5'd2;
-                    addr_ra_id_o        = 5'd2;
-                    alu_operator_o = ALU_ADD;
+                addr_ra_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+                waddr_id_o          = 5'd0;
+                // c.jr with rs1 = 0 is reserved
+                if (instr_rdata_i[11:7] == 5'b0) illegal_insn_o = 1'b1;
+              end else begin
+                // if (instr_rdata_i[11:7] == 5'b0) begin
+                //   // Hint -> add x0, x0, rs2
 
-                  end else if (instr_rdata_i[11:7] == 5'b0) begin
-                    // Hint -> lui x0, imm
-                    alu_op_a_mux_sel_o  = OP_A_IMM;
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_a_mux_sel_o     = IMMA_ZERO;
-                    imm_b_mux_sel_o     = IMMB_CLUI;
-                    alu_operator_o      = ALU_ADD;
-                    regfile_alu_we      = 1'b1;
-                  end else begin
-                    // c.lui -> lui rd, imm
-                    alu_op_a_mux_sel_o  = OP_A_IMM;
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_a_mux_sel_o     = IMMA_ZERO;
-                    imm_b_mux_sel_o     = IMMB_CLUI;
-                    alu_operator_o      = ALU_ADD;
-                    regfile_alu_we      = 1'b1;
-                    waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                  end
-                end
-              end
+                // end else begin
+                //   // c.mv -> add rd, x0, rs2
 
-              3'b100: begin
-                unique case (instr_rdata_i[11:10])
-                  // 00: c.srli -> srli rd, rd, shamt
-                  2'b00: begin
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_b_mux_sel_o     = IMMB_CSRLI;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-                    addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                    waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                    alu_operator_o = ALU_SRL;
-                    if (instr_rdata_i[12] == 1'b1) begin
-                      illegal_c_insn_o = 1'b1;
-                    end
-                  end
-                  // 01: c.srai -> srai rd, rd, shamt
-                  2'b01: begin
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    //  IMMEDIATE { 26'b0,instr[12:12],instr[6:2] }
-                    imm_b_mux_sel_o     = IMMB_CSRLI;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-                    addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                    waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                    alu_operator_o = ALU_SRA;
-                    if (instr_rdata_i[12] == 1'b1) begin
-                      illegal_c_insn_o = 1'b1;
-                    end
-                  end
-                   // c.andi -> andi rd, rd, imm
-                  2'b10: begin
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_b_mux_sel_o     = IMMB_CANDI;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-                    addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                    waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                    alu_operator_o = ALU_AND;
-                  end
-                  2'b11: begin
-
-                    unique case ({instr_rdata_i[12], instr_rdata_i[6:5]})
-                        3'b000: begin
-                          // c.sub -> sub rd', rd', rs2'
-                          regfile_alu_we = 1'b1;
-                          rega_used_o    = 1'b1;
-                          regb_used_o    = 1'b1;
-                          addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                          addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
-                          waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                          alu_operator_o = ALU_SUB;
-                        end
-
-                        3'b001: begin
-                          // c.xor -> xor rd', rd', rs2'
-                          regfile_alu_we = 1'b1;
-                          rega_used_o    = 1'b1;
-                          regb_used_o    = 1'b1;
-                          addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                          addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
-                          waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                          alu_operator_o = ALU_XOR;
-                        end
-
-                        3'b010: begin
-                          // c.or  -> or  rd', rd', rs2'
-                          regfile_alu_we = 1'b1;
-                          rega_used_o    = 1'b1;
-                          regb_used_o    = 1'b1;
-                          addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                          addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
-                          waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                          alu_operator_o = ALU_OR;
-                        end
-
-                        3'b011: begin
-                          // c.and -> and rd', rd', rs2'
-                          regfile_alu_we = 1'b1;
-                          rega_used_o    = 1'b1;
-                          regb_used_o    = 1'b1;
-                          addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                          addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
-                          waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-                          alu_operator_o = ALU_AND;
-                        end
-                          // c.mul -> mul rd', rd', rs2'
-                        3'b110: begin
-						              if (Zcee) begin
-                            regfile_alu_we = 1'b1;
-                            rega_used_o    = 1'b1;
-                            regb_used_o    = 1'b1;
-
-                            addr_ra_id_o        = {2'b01,instr_rdata_i[9:7]};
-                            addr_rb_id_o        = {2'b01,instr_rdata_i[4:2]};
-                            waddr_id_o          = {2'b01,instr_rdata_i[9:7]};
-
-                            alu_en          = 1'b0;
-                            mult_int_en     = 1'b1;
-                            mult_operator_o = MUL_MAC32;
-                            regc_mux_o      = REGC_ZERO;
-                          end
-                          else 
-                            illegal_c_insn_o = 1'b1;
-                        end
-                        3'b100, 3'b101, 3'b111: begin
-                          // 100: c.subw
-                          // 101: c.addw
-                          illegal_c_insn_o = 1'b1;
-                        end
-                    endcase
-                  end
-                endcase
-              end
-
-              3'b110: begin
-              // 0: c.beqz -> beq rs1', x0, imm
-              ctrl_transfer_target_mux_sel_o = JT_CCOND;
-              ctrl_transfer_insn    = BRANCH_COND;
-              alu_op_c_mux_sel_o    = OP_C_JT;
-              rega_used_o           = 1'b1;
-              regb_used_o           = 1'b1;
-              addr_ra_id_o          = {2'b01,instr_rdata_i[9:7]};
-              addr_rb_id_o          = 5'd0;
-
-              alu_operator_o        = ALU_EQ;
-              end
-
-              3'b111: begin
-              // 1: c.bnez -> bne rs1', x0, imm
-              ctrl_transfer_target_mux_sel_o = JT_CCOND;
-              ctrl_transfer_insn    = BRANCH_COND;
-              alu_op_c_mux_sel_o    = OP_C_JT;
-              rega_used_o           = 1'b1;
-              regb_used_o           = 1'b1;
-              addr_ra_id_o          = {2'b01,instr_rdata_i[9:7]};
-              addr_rb_id_o          = 5'd0;
-              alu_operator_o        = ALU_NE;
-
-
-              end
-            endcase
-          end
-          // C2
-          2'b10: begin
-            unique case (instr_rdata_i[15:13])
-              3'b000: begin
-                if (instr_rdata_i[12] == 1'b1) begin
-                  /* Reserved for future extensions (instr_o don't care)
-                    SLLI64 (Generate Illegal Instruction Exception but
-                    it tries extend it non the less ?? ) */
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_b_mux_sel_o     = IMMB_I;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-                    addr_ra_id_o        = instr_rdata_i[11:7];
-                    waddr_id_o          = instr_rdata_i[11:7];
-                    alu_operator_o      = ALU_SLL;
-                    illegal_c_insn_o    = 1'b1;
-                end else begin
-                    // SLLI,the immediate format is the same, thats why its called like that !
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_b_mux_sel_o     = IMMB_CSRLI;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-                    addr_ra_id_o        = instr_rdata_i[11:7];
-                    waddr_id_o          = instr_rdata_i[11:7];
-                    alu_operator_o      = ALU_SLL;
-                end
-              end
-
-              3'b001: begin
-                // c.fldsp -> fld rd, imm(x2)
-                if (FPU==1 && C_RVD && ZFINX == 1'b0)
-                begin // instr_i[6:5] -> offset[4:3], instr_i[4:2] -> offset[8:6], instr_i[12] -> offset[5]
-                  data_req            = 1'b1;
-                  regfile_mem_we      = 1'b1;
-                  reg_fp_d_o          = 1'b1;
-                  rega_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  // offset from immediate
-                  imm_b_mux_sel_o     = IMMB_CFLDSP;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  addr_ra_id_o        = 5'd2;
-                  waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                  // NaN boxing
-                  data_sign_extension_o = 2'b10;
-                  data_type_o = 2'b00;
-                end
-                else if (Zceb)
-                begin
-                  // C.LB and C.LH
-                  data_req        = 1'b1;
-                  regfile_mem_we  = 1'b1;
-                  rega_used_o     = 1'b1;
-                  data_type_o         = instr_rdata_i[12] ? 2'b01 : 2'b10;
-                // GPR IDs
-                  addr_ra_id_o    = {2'b01,instr_rdata_i[9:7]};
-                  waddr_id_o      = {2'b01,instr_rdata_i[4:2]};
-                  // offset from immediate
-                  alu_operator_o      = ALU_ADD;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-                  imm_b_mux_sel_o     = instr_rdata_i[12] ? IMMB_CLSH : IMMB_CLSB;
-                  data_sign_extension_o = 2'b01;
-                end
-                else illegal_c_insn_o = 1'b1;
-              end
-
-              3'b010: begin
-                // c.lwsp -> lw rd, imm(x2)
-                data_req        = 1'b1;
-                regfile_mem_we  = 1'b1;
-                rega_used_o     = 1'b1;
-                data_type_o     = 2'b00;
-
-                addr_ra_id_o        = 5'd2;
-                waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                // offset from immediate
-                alu_operator_o      = ALU_ADD;
-                alu_op_b_mux_sel_o  = OP_B_IMM;
-                imm_b_mux_sel_o     = IMMB_CLWSP;
-                data_sign_extension_o = 2'b01;
-                data_type_o = 2'b00;
-
-                if (instr_rdata_i[11:7] == 5'b0) illegal_c_insn_o = 1'b1;
-              end
-
-              3'b011: begin
-                // c.flwsp -> flw rd, imm(x2)
-                if (FPU == 1 && C_RVF && ZFINX == 1'b0) begin
-                  data_req            = 1'b1;
-                  regfile_mem_we      = 1'b1;
-                  reg_fp_d_o          = 1'b1;
-                  rega_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  // offset from immediate
-                  //  IMMEDIATE { 24'b0,instr[3:2],instr[12:12],instr[6:4],2'b0},
-                  imm_b_mux_sel_o     = IMMB_CLWSP;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  addr_ra_id_o        = 5'd2;
-                  waddr_id_o          = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                  // NaN boxing
-                  data_sign_extension_o = 2'b10;
-                  data_type_o = 2'b00;
-                end
-                else illegal_c_insn_o = 1'b1;
-              end
-
-              3'b100: begin
-                if (instr_rdata_i[12] == 1'b0) begin
-                  if (instr_rdata_i[6:2] == 5'b0) begin
-                    // c.jr -> jalr x0, rd/rs1, 0
-                    ctrl_transfer_target_mux_sel_o = JT_CJALR;
-                    ctrl_transfer_insn    = BRANCH_JALR;
-                    // Calculate and store PC+4
-                    alu_op_a_mux_sel_o  = OP_A_CURRPC;
-                    alu_op_b_mux_sel_o  = OP_B_IMM;
-                    imm_b_mux_sel_o     = IMMB_PCINCR;
-                    alu_operator_o      = ALU_ADD;
-                    regfile_alu_we      = 1'b1;
-                    rega_used_o         = 1'b1;
-
-                    addr_ra_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                    waddr_id_o          = 5'd0;
-                    // c.jr with rs1 = 0 is reserved
-                    if (instr_rdata_i[11:7] == 5'b0) illegal_c_insn_o = 1'b1;
-                  end else begin
-                    // if (instr_rdata_i[11:7] == 5'b0) begin
-                    //   // Hint -> add x0, x0, rs2
-
-                    // end else begin
-                    //   // c.mv -> add rd, x0, rs2
-
-                    // end
-                    regfile_alu_we = 1'b1;
-                    rega_used_o    = 1'b1;
-                    regb_used_o    = 1'b1;
-                    addr_ra_id_o   = 5'd0;
-                    addr_rb_id_o   = instr_rdata_i[6:2];
-
-                    waddr_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-
-                    alu_operator_o = ALU_ADD;
-                  end
-                end else begin
-                  if (instr_rdata_i[6:2] == 5'b0) begin
-                    if (instr_rdata_i[11:7] == 5'b0) begin
-                      // c.ebreak -> ebreak
-                      ebrk_insn_o = 1'b1;
-                    end else begin
-                      // c.jalr -> jalr x1, rs1, 0
-                      ctrl_transfer_target_mux_sel_o = JT_CJALR;
-                      ctrl_transfer_insn    = BRANCH_JALR;
-                      // Calculate and store PC+4
-                      alu_op_a_mux_sel_o  = OP_A_CURRPC;
-                      alu_op_b_mux_sel_o  = OP_B_IMM;
-                      imm_b_mux_sel_o     = IMMB_PCINCR;
-                      alu_operator_o      = ALU_ADD;
-                      regfile_alu_we      = 1'b1;
-                      // Calculate jump target (= RS1 + I imm)
-                      rega_used_o         = 1'b1;
-                      addr_ra_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                      waddr_id_o          = 5'd1;
-
-                    end
-                  end else begin
-                    regfile_alu_we = 1'b1;
-                    rega_used_o    = 1'b1;
-                    regb_used_o    = 1'b1;
-
-                    addr_ra_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                    addr_rb_id_o   = instr_rdata_i[6:2];
-                    waddr_id_o     = instr_rdata_i[REG_D_MSB:REG_D_LSB];;
-
-
-                    alu_operator_o = ALU_ADD;
-                    // if (instr_rdata_i[11:7] == 5'b0) begin
-                    //   // Hint -> add x0, x0, rs2
-
-                    // end else begin
-                    //   // c.add -> add rd, rd, rs2
-
-                    // end
-                  end
-                end
-              end
-
-              3'b101: begin
-                // c.fsdsp -> fsd rs2, imm(x2)
-                // instr_i[12:10] -> offset[5:3], instr_i[9:7] -> offset[8:6]
-                if (FPU == 1 && C_RVD && ZFINX == 1'b0)  begin
-                  data_req            = 1'b1;
-                  data_we_o           = 1'b1;
-                  rega_used_o         = 1'b1;
-                  regb_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  reg_fp_b_o          = 1'b1;
-
-                  // offset from immediate
-                  imm_b_mux_sel_o     = IMMB_FSDP;
-                  alu_op_b_mux_sel_o  = OP_B_IMM;
-
-                  addr_ra_id_o        = 5'd2;
-                  addr_rb_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                  // pass write data through ALU operand c
-                  alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-                  data_type_o = 2'b00;
-                end
-                else illegal_c_insn_o = 1'b1;
-              end
-              3'b110: begin
-                // c.swsp -> sw rs2, imm(x2)
-                data_req       = 1'b1;
-                data_we_o      = 1'b1;
+                // end
+                regfile_alu_we = 1'b1;
                 rega_used_o    = 1'b1;
                 regb_used_o    = 1'b1;
-                alu_operator_o = ALU_ADD;
-
-                addr_ra_id_o   = 5'd2;
+                addr_ra_id_o   = 5'd0;
                 addr_rb_id_o   = instr_rdata_i[6:2];
-                // pass write data through ALU operand c
-                alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-                //  IMMEDIATE { 24'b0,instr[8:7],instr[12:9],2'b0 }
-                imm_b_mux_sel_o     = IMMB_CSWSP;
-                alu_op_b_mux_sel_o  = OP_B_IMM;
+
+                waddr_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+
+                alu_operator_o = ALU_ADD;
               end
-
-              3'b111: begin
-                // c.fswsp -> fsw rs2, imm(x2)
-                if (FPU == 1 && C_RVF && ZFINX == 1'b0) begin
-                  data_req            = 1'b1;
-                  data_we_o           = 1'b1;
-                  rega_used_o         = 1'b1;
-                  regb_used_o         = 1'b1;
-                  alu_operator_o      = ALU_ADD;
-                  reg_fp_b_o          = 1'b1;
-
-                  addr_ra_id_o   = 5'd2;
-                  addr_rb_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
-                  // offset from immediate
-                  imm_b_mux_sel_o     = IMMB_CSWSP;
+            end else begin
+              if (instr_rdata_i[6:2] == 5'b0) begin
+                if (instr_rdata_i[11:7] == 5'b0) begin
+                  // c.ebreak -> ebreak
+                  ebrk_insn_o = 1'b1;
+                end else begin
+                  // c.jalr -> jalr x1, rs1, 0
+                  ctrl_transfer_target_mux_sel_o = JT_CJALR;
+                  ctrl_transfer_insn    = BRANCH_JALR;
+                  // Calculate and store PC+4
+                  alu_op_a_mux_sel_o  = OP_A_CURRPC;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
+                  imm_b_mux_sel_o     = IMMB_PCINCR;
+                  alu_operator_o      = ALU_ADD;
+                  regfile_alu_we      = 1'b1;
+                  // Calculate jump target (= RS1 + I imm)
+                  rega_used_o         = 1'b1;
+                  addr_ra_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+                  waddr_id_o          = 5'd1;
 
-                  // pass write data through ALU operand c
-                  alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
-
-                  data_type_o = 2'b00;
                 end
-                else illegal_c_insn_o = 1'b1;
+              end else begin
+                regfile_alu_we = 1'b1;
+                rega_used_o    = 1'b1;
+                regb_used_o    = 1'b1;
+
+                addr_ra_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+                addr_rb_id_o   = instr_rdata_i[6:2];
+                waddr_id_o     = instr_rdata_i[REG_D_MSB:REG_D_LSB];;
+
+
+                alu_operator_o = ALU_ADD;
+                // if (instr_rdata_i[11:7] == 5'b0) begin
+                //   // Hint -> add x0, x0, rs2
+
+                // end else begin
+                //   // c.add -> add rd, rd, rs2
+
+                // end
               end
-            endcase
+            end
           end
-          default: begin
-            illegal_c_insn_o = 1'b0;
+
+          3'b101: begin
+            // c.fsdsp -> fsd rs2, imm(x2)
+            // instr_i[12:10] -> offset[5:3], instr_i[9:7] -> offset[8:6]
+            if (FPU == 1 && C_RVD && ZFINX == 1'b0)  begin
+              data_req            = 1'b1;
+              data_we_o           = 1'b1;
+              rega_used_o         = 1'b1;
+              regb_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              reg_fp_b_o          = 1'b1;
+
+              // offset from immediate
+              imm_b_mux_sel_o     = IMMB_FSDP;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              addr_ra_id_o        = 5'd2;
+              addr_rb_id_o        = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+              // pass write data through ALU operand c
+              alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+              data_type_o = 2'b00;
+            end
+            else illegal_insn_o = 1'b1;
+          end
+          3'b110: begin
+            // c.swsp -> sw rs2, imm(x2)
+            data_req       = 1'b1;
+            data_we_o      = 1'b1;
+            rega_used_o    = 1'b1;
+            regb_used_o    = 1'b1;
+            alu_operator_o = ALU_ADD;
+
+            addr_ra_id_o   = 5'd2;
+            addr_rb_id_o   = instr_rdata_i[6:2];
+            // pass write data through ALU operand c
+            alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+            //  IMMEDIATE { 24'b0,instr[8:7],instr[12:9],2'b0 }
+            imm_b_mux_sel_o     = IMMB_CSWSP;
+            alu_op_b_mux_sel_o  = OP_B_IMM;
+          end
+
+          3'b111: begin
+            // c.fswsp -> fsw rs2, imm(x2)
+            if (FPU == 1 && C_RVF && ZFINX == 1'b0) begin
+              data_req            = 1'b1;
+              data_we_o           = 1'b1;
+              rega_used_o         = 1'b1;
+              regb_used_o         = 1'b1;
+              alu_operator_o      = ALU_ADD;
+              reg_fp_b_o          = 1'b1;
+
+              addr_ra_id_o   = 5'd2;
+              addr_rb_id_o   = instr_rdata_i[REG_D_MSB:REG_D_LSB];
+              // offset from immediate
+              imm_b_mux_sel_o     = IMMB_CSWSP;
+              alu_op_b_mux_sel_o  = OP_B_IMM;
+
+              // pass write data through ALU operand c
+              alu_op_c_mux_sel_o = OP_C_REGB_OR_FWD;
+
+              data_type_o = 2'b00;
+            end
+            else illegal_insn_o = 1'b1;
           end
         endcase
+      end
+    endcase
 
-    //16 bit instructions
-
-    // make sure invalid compressed instruction causes an exception
-    if (illegal_c_insn_o) begin
-      illegal_insn_o = 1'b1;
-    end
 
   end
 
