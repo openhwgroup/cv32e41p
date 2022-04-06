@@ -566,7 +566,7 @@ package cv32e41p_pkg;
 
   // Machine Architecture ID (https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
   // https://github.com/riscv/riscv-isa-manual/pull/818/files
-  parameter MARCHID = 32'h28;
+  parameter MARCHID = 32'd28;
 
   ///////////////////////////////////////////////
   //   ___ ____    ____  _                     //
