@@ -38,6 +38,7 @@ module cv32e41p_register_file #(
     input logic rst_n,
 
     input logic scan_cg_en_i,
+    input logic en_reg_zero,
 
     //Read port R1
     input  logic [ADDR_WIDTH-1:0] raddr_a_i,
@@ -92,9 +93,9 @@ module cv32e41p_register_file #(
       assign rdata_b_o = raddr_b_i[5] ? mem_fp[raddr_b_i[4:0]] : mem[raddr_b_i[4:0]];
       assign rdata_c_o = raddr_c_i[5] ? mem_fp[raddr_c_i[4:0]] : mem[raddr_c_i[4:0]];
     end else begin : gen_mem_read
-      assign rdata_a_o = mem[raddr_a_i[4:0]];
-      assign rdata_b_o = mem[raddr_b_i[4:0]];
-      assign rdata_c_o = mem[raddr_c_i[4:0]];
+      assign rdata_a_o = raddr_a_i[4:0] == 5'd0 && !en_reg_zero ? 5'd0 : mem[raddr_a_i[4:0]];
+      assign rdata_b_o = raddr_b_i[4:0] == 5'd0 && !en_reg_zero ? 5'd0 : mem[raddr_b_i[4:0]];
+      assign rdata_c_o = raddr_c_i[4:0] == 5'd0 && !en_reg_zero ? 5'd0 : mem[raddr_c_i[4:0]];
     end
   endgenerate
 
@@ -120,19 +121,9 @@ module cv32e41p_register_file #(
     //-----------------------------------------------------------------------------
     //-- WRITE : Write operation
     //-----------------------------------------------------------------------------
-    // R0 is nil
-    always_ff @(posedge clk or negedge rst_n) begin
-      if (~rst_n) begin
-        // R0 is nil
-        mem[0] <= 32'b0;
-      end else begin
-        // R0 is nil
-        mem[0] <= 32'b0;
-      end
-    end
+    // R0 is nil unless we have en_reg_zero set high
 
-    // loop from 1 to NUM_WORDS-1 as R0 is nil
-    for (i = 1; i < NUM_WORDS; i++) begin : gen_rf
+    for (i = 0; i < NUM_WORDS; i++) begin : gen_rf
 
       always_ff @(posedge clk, negedge rst_n) begin : register_write_behavioral
         if (rst_n == 1'b0) begin

@@ -118,6 +118,10 @@ module cv32e41p_wrapper
       .PULP_CLUSTER    (PULP_CLUSTER),
       .FPU             (FPU),
       .ZFINX           (ZFINX),
+      .Zcea            (Zcea),
+      .Zceb            (Zceb),
+      .Zcec            (Zcec),
+      .Zcee            (Zcee),
       .NUM_MHPMCOUNTERS(NUM_MHPMCOUNTERS)
   ) core_log_i (
       .clk_i             (core_i.id_stage_i.clk),

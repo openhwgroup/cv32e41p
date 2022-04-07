@@ -61,6 +61,7 @@ module cv32e41p_controller import cv32e41p_pkg::*;
   input  logic        ebrk_insn_i,                // decoder encountered an ebreak instruction
   input  logic        fencei_insn_i,              // decoder encountered an fence.i instruction
   input  logic        csr_status_i,               // decoder encountered an csr status instruction
+  input  logic        seq_active_i,               // sequenced decoder encountered a sequenced instruction
 
   output logic        hwlp_mask_o,                // prevent writes on the hwloop instructions in case interrupt are taken
 
@@ -252,7 +253,7 @@ module cv32e41p_controller import cv32e41p_pkg::*;
   begin
     // Default values
 
-    instr_req_o            = 1'b1;
+    instr_req_o            = seq_active_i ?  1'b0 : 1'b1;
 
     data_err_ack_o         = 1'b0;
 

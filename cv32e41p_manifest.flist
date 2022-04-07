@@ -31,6 +31,7 @@
 ${DESIGN_RTL_DIR}/include/cv32e41p_apu_core_pkg.sv
 ${DESIGN_RTL_DIR}/include/cv32e41p_fpu_pkg.sv
 ${DESIGN_RTL_DIR}/include/cv32e41p_pkg.sv
+${DESIGN_RTL_DIR}/include/cv32e41p_seq_pkg.sv
 ${DESIGN_RTL_DIR}/../bhv/include/cv32e41p_tracer_pkg.sv
 ${DESIGN_RTL_DIR}/cv32e41p_if_stage.sv
 ${DESIGN_RTL_DIR}/cv32e41p_cs_registers.sv
@@ -39,6 +40,7 @@ ${DESIGN_RTL_DIR}/cv32e41p_load_store_unit.sv
 ${DESIGN_RTL_DIR}/cv32e41p_id_stage.sv
 ${DESIGN_RTL_DIR}/cv32e41p_aligner.sv
 ${DESIGN_RTL_DIR}/cv32e41p_merged_decoder.sv
+${DESIGN_RTL_DIR}/cv32e41p_sequencer.sv
 ${DESIGN_RTL_DIR}/cv32e41p_fifo.sv
 ${DESIGN_RTL_DIR}/cv32e41p_prefetch_buffer.sv
 ${DESIGN_RTL_DIR}/cv32e41p_hwloop_regs.sv

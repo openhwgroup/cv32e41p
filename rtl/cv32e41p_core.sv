@@ -132,6 +132,8 @@ module cv32e41p_core
   // IF/ID signals
   logic        instr_valid_id;
   logic [31:0] instr_rdata_id;  // Instruction sampled inside IF stage
+  logic        is_compressed_id;
+  logic        seq_active;
   logic        is_fetch_failed_id;
 
   logic        clear_instr_valid;
@@ -313,6 +315,7 @@ module cv32e41p_core
   logic                           trigger_match;
   logic                           debug_p_elw_no_sleep;
 
+  logic [             31:0]       tbljalvec;
   // Hardware loop controller signals
   logic [       N_HWLP-1:0][31:0] hwlp_start;
   logic [       N_HWLP-1:0][31:0] hwlp_end;
@@ -480,14 +483,17 @@ module cv32e41p_core
       .pc_id_o(pc_id),
       .pc_if_o(pc_if),
 
+      .is_compressed_id_o(is_compressed_id),
 
       .m_exc_vec_pc_mux_i(m_exc_vec_pc_mux_id),
       .u_exc_vec_pc_mux_i(u_exc_vec_pc_mux_id),
 
       .csr_mtvec_init_o(csr_mtvec_init),
 
+      .seq_active_o(seq_active),
+      .en_reg_zero_write_o(en_reg_zero_write),
       // from hwloop registers
-      .hwlp_jump_i  (hwlp_jump),
+      .hwlp_jump_i(hwlp_jump),
       .hwlp_target_i(hwlp_target),
 
 
@@ -564,6 +570,9 @@ module cv32e41p_core
       .is_fetch_failed_i(is_fetch_failed_id),
 
       .pc_id_i(pc_id),
+
+      .is_compressed_i(is_compressed_id),
+      .seq_active_i(seq_active),
 
       // Stalls
       .halt_if_o(halt_if),
@@ -658,6 +667,9 @@ module cv32e41p_core
 
       .hwlp_jump_o  (hwlp_jump),
       .hwlp_target_o(hwlp_target),
+
+      .en_reg_zero_write_i(en_reg_zero_write),
+      .tbljalvec_i(tbljalvec),
 
       // hardware loop signals from CSR
       .csr_hwlp_regid_i(csr_hwlp_regid),
@@ -939,6 +951,9 @@ module cv32e41p_core
       .A_EXTENSION     (A_EXTENSION),
       .FPU             (FPU),
       .ZFINX           (ZFINX),
+      .Zcea            (Zcea),
+      .Zceb            (Zceb),
+      .Zcec            (Zcec),
       .APU             (APU),
       .PULP_SECURE     (PULP_SECURE),
       .USE_PMP         (USE_PMP),
@@ -1013,6 +1028,7 @@ module cv32e41p_core
       .csr_cause_i     (csr_cause),
       .csr_save_cause_i(csr_save_cause),
 
+      .tbljalvec_o (tbljalvec),
       // from hwloop registers
       .hwlp_start_i(hwlp_start),
       .hwlp_end_i  (hwlp_end),

@@ -285,11 +285,11 @@ package cv32e41p_pkg;
     ///////////////////////////////////////////////////////
 
     // Hardware Loop
-    CSR_LPSTART0 = 12'h800,  // Custom CSR. Included if PULP_HWLP = 1
-    CSR_LPEND0   = 12'h801,  // Custom CSR. Included if PULP_HWLP = 1
+    CSR_LPSTART0_or_TBLJALVEC = 12'h800,  // Custom CSR. Included if PULP_HWLP = 1
+    CSR_LPEND0 = 12'h801,  // Custom CSR. Included if PULP_HWLP = 1
     CSR_LPCOUNT0 = 12'h802,  // Custom CSR. Included if PULP_HWLP = 1
     CSR_LPSTART1 = 12'h804,  // Custom CSR. Included if PULP_HWLP = 1
-    CSR_LPEND1   = 12'h805,  // Custom CSR. Included if PULP_HWLP = 1
+    CSR_LPEND1 = 12'h805,  // Custom CSR. Included if PULP_HWLP = 1
     CSR_LPCOUNT1 = 12'h806,  // Custom CSR. Included if PULP_HWLP = 1
 
     // User Hart ID
@@ -566,7 +566,7 @@ package cv32e41p_pkg;
 
   // Machine Architecture ID (https://github.com/riscv/riscv-isa-manual/blob/master/marchid.md)
   // https://github.com/riscv/riscv-isa-manual/pull/818/files
-  parameter MARCHID = 32'h28;
+  parameter MARCHID = 32'd28;
 
   ///////////////////////////////////////////////
   //   ___ ____    ____  _                     //
