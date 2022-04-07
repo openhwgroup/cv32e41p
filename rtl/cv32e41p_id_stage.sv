@@ -1847,22 +1847,21 @@ module cv32e41p_id_stage
                                                            (alu_operator != ALU_PCKHI) );
       endproperty
 
-      property p_alu_op;
-        @(posedge clk) disable iff (!rst_n && Zcee) (1'b1) |-> ( (alu_operator != ALU_EXT) && (alu_operator != ALU_EXTS) );
+      // TODO remove this when implementing ZEXT/SEXT on their own in the ALU ! 
+      property p_zce_zsext_or_pulp;
+        @(posedge clk) disable iff (!rst_n || Zcee) (1'b1) |-> ( (alu_operator != ALU_EXT) && (alu_operator != ALU_EXTS) );
       endproperty
 
-      a_alu_op :
-      assert property (p_alu_op);
+      a_zce_zsext_or_pulp :
+      assert property (p_zce_zsext_or_pulp);
 
       // Check that certain vector modes are not used when PULP extension is not enabled
-      if (!Zcee) begin
-        property p_vector_mode;
-          @(posedge clk) disable iff (!rst_n) (1'b1) |-> ( (alu_vec_mode != VEC_MODE8 ) && (alu_vec_mode != VEC_MODE16 ) );
-        endproperty
-      end
+      property p_vector_mode;
+        @(posedge clk) disable iff (!rst_n || Zcee) (1'b1) |-> ( (alu_vec_mode != VEC_MODE8 ) && (alu_vec_mode != VEC_MODE16 ) );
+      endproperty
 
       a_vector_mode :
-      assert property (p_vector_mode);
+        assert property (p_vector_mode);
 
       // Check that certain multiplier operations are not used when PULP extension is not enabled
       property p_mul_op;
