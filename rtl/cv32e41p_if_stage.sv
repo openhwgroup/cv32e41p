@@ -64,6 +64,7 @@ module cv32e41p_if_stage #(
     // Output of IF Pipeline stage
     output logic instr_valid_id_o,  // instruction in IF/ID pipeline is valid
     output logic       [31:0] instr_rdata_id_o,      // read instruction is sampled and sent to ID stage for decoding
+    output logic is_compressed_id_o,
     output logic [31:0] pc_if_o,
     output logic [31:0] pc_id_o,
     output logic is_fetch_failed_o,
@@ -87,9 +88,11 @@ module cv32e41p_if_stage #(
     input logic [31:0] jump_target_id_i,  // jump target address
     input logic [31:0] jump_target_ex_i,  // jump target address
 
+    output logic        en_reg_zero_write_o,
+    output logic        seq_active_o,
     // from hwloop controller
-    input logic        hwlp_jump_i,
-    input logic [31:0] hwlp_target_i,
+    input  logic        hwlp_jump_i,
+    input  logic [31:0] hwlp_target_i,
 
     // pipeline stall
     input logic halt_if_i,
@@ -103,7 +106,7 @@ module cv32e41p_if_stage #(
   import cv32e41p_pkg::*;
 
   logic if_valid, if_ready;
-
+  logic        seq_write_reg_zero;
   // prefetch buffer related signals
   logic        prefetch_busy;
   logic        branch_req;
@@ -123,9 +126,10 @@ module cv32e41p_if_stage #(
   logic        instr_valid;
 
   logic [31:0] instr_aligned;
-  logic [31:0] instr_decompressed;
+  logic [31:0] instr_sequenced;
   logic        instr_compressed_int;
-
+  logic        seq_finishing;
+  logic        is_sequenced;
 
   // exception PC selection mux
   always_comb begin : EXC_PC_MUX
@@ -229,31 +233,54 @@ module cv32e41p_if_stage #(
   // IF-ID pipeline registers, frozen when the ID stage is stalled
   always_ff @(posedge clk, negedge rst_n) begin : IF_ID_PIPE_REGISTERS
     if (rst_n == 1'b0) begin
-      instr_valid_id_o  <= 1'b0;
-      instr_rdata_id_o  <= '0;
-      is_fetch_failed_o <= 1'b0;
-      pc_id_o           <= '0;
+      instr_valid_id_o    <= 1'b0;
+      instr_rdata_id_o    <= '0;
+      is_fetch_failed_o   <= 1'b0;
+      pc_id_o             <= '0;
+      is_compressed_id_o  <= 1'b0;
+      en_reg_zero_write_o <= 1'b0;
     end else begin
 
-      if (if_valid && instr_valid) begin
-        instr_valid_id_o  <= 1'b1;
-        instr_rdata_id_o  <= instr_aligned;
-        is_fetch_failed_o <= 1'b0;
-        pc_id_o           <= pc_if_o;
+      if (if_valid && (instr_valid | seq_active_o)) begin
+        instr_valid_id_o    <= 1'b1;
+        instr_rdata_id_o    <= instr_sequenced;
+        is_compressed_id_o  <= instr_compressed_int;
+        en_reg_zero_write_o <= seq_write_reg_zero;
+        is_fetch_failed_o   <= 1'b0;
+        pc_id_o             <= pc_if_o;
       end else if (clear_instr_valid_i) begin
-        instr_valid_id_o  <= 1'b0;
+        instr_valid_id_o <= 1'b0;
+        en_reg_zero_write_o <= 1'b0;
         is_fetch_failed_o <= fetch_failed;
       end
     end
   end
 
-  assign if_ready = fetch_valid & id_ready_i;
+  if (Zcec) begin : sequencer_gen
+    cv32e41p_sequencer sequencer_i (
+        .clk                 (clk),
+        .n_rst               (rst_n),
+        .instr_rdata_i       (instr_aligned),
+        .if_valid_i          (if_valid),
+        .instruction_o       (instr_sequenced),
+        .is_sequenced_o      (is_sequenced),
+        .seq_write_reg_zero_o(seq_write_reg_zero),
+        .seq_finished_o      (seq_finishing)
+    );
+  end else begin : no_sequencer
+    assign instr_sequenced = instr_aligned;
+  end
+
   assign if_valid = (~halt_if_i) & if_ready;
+  assign if_ready = fetch_valid & id_ready_i;
+
+  assign seq_active_o = is_sequenced && (~seq_finishing);
 
   cv32e41p_aligner aligner_i (
       .clk             (clk),
       .rst_n           (rst_n),
       .fetch_valid_i   (fetch_valid),
+      .seq_active_i    (seq_active_o),
       .aligner_ready_o (aligner_ready),
       .if_valid_i      (if_valid),
       .fetch_rdata_i   (fetch_rdata),
@@ -266,7 +293,7 @@ module cv32e41p_if_stage #(
       .pc_o            (pc_if_o)
   );
 
-
+  assign instr_compressed_int = instr_aligned[1:0] != 2'b11;
   //----------------------------------------------------------------------------
   // Assertions
   //----------------------------------------------------------------------------

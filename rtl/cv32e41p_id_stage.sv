@@ -63,8 +63,11 @@ module cv32e41p_id_stage
 
     // Interface to IF stage
     input  logic        instr_valid_i,
-    input  logic [31:0] instr_rdata_i,  // comes from pipeline of IF stage
+    input  logic [31:0] instr_rdata_i,    // comes from pipeline of IF stage
     output logic        instr_req_o,
+    input  logic        is_compressed_i,
+    input  logic        seq_active_i,
+
 
     // Jumps and branches
     output logic        branch_in_ex_o,
@@ -174,6 +177,8 @@ module cv32e41p_id_stage
     output logic                    hwlp_jump_o,
     output logic [      31:0]       hwlp_target_o,
 
+    input logic                   en_reg_zero_write_i,
+    input logic [           31:0] tbljalvec_i,
     // hwloop signals from CS register
     input logic [N_HWLP_BITS-1:0] csr_hwlp_regid_i,
     input logic [            2:0] csr_hwlp_we_i,
@@ -591,13 +596,13 @@ module cv32e41p_id_stage
   assign regfile_alu_waddr_id = regfile_alu_waddr_mux_sel ? regfile_waddr_id : regfile_addr_ra_id;
 
   // Forwarding control signals
-  assign reg_d_ex_is_reg_a_id  = (regfile_waddr_ex_o     == regfile_addr_ra_id) && (rega_used_dec == 1'b1) && (regfile_addr_ra_id != '0);
+  assign reg_d_ex_is_reg_a_id  = (regfile_waddr_ex_o     == regfile_addr_ra_id) && (rega_used_dec == 1'b1) && (regfile_addr_ra_id != '0 | en_reg_zero_write_i);
   assign reg_d_ex_is_reg_b_id  = (regfile_waddr_ex_o     == regfile_addr_rb_id) && (regb_used_dec == 1'b1) && (regfile_addr_rb_id != '0);
   assign reg_d_ex_is_reg_c_id  = (regfile_waddr_ex_o     == regfile_addr_rc_id) && (regc_used_dec == 1'b1) && (regfile_addr_rc_id != '0);
-  assign reg_d_wb_is_reg_a_id  = (regfile_waddr_wb_i     == regfile_addr_ra_id) && (rega_used_dec == 1'b1) && (regfile_addr_ra_id != '0);
+  assign reg_d_wb_is_reg_a_id  = (regfile_waddr_wb_i     == regfile_addr_ra_id) && (rega_used_dec == 1'b1) && (regfile_addr_ra_id != '0 | en_reg_zero_write_i);
   assign reg_d_wb_is_reg_b_id  = (regfile_waddr_wb_i     == regfile_addr_rb_id) && (regb_used_dec == 1'b1) && (regfile_addr_rb_id != '0);
   assign reg_d_wb_is_reg_c_id  = (regfile_waddr_wb_i     == regfile_addr_rc_id) && (regc_used_dec == 1'b1) && (regfile_addr_rc_id != '0);
-  assign reg_d_alu_is_reg_a_id = (regfile_alu_waddr_fw_i == regfile_addr_ra_id) && (rega_used_dec == 1'b1) && (regfile_addr_ra_id != '0);
+  assign reg_d_alu_is_reg_a_id = (regfile_alu_waddr_fw_i == regfile_addr_ra_id) && (rega_used_dec == 1'b1) && (regfile_addr_ra_id != '0 | en_reg_zero_write_i);
   assign reg_d_alu_is_reg_b_id = (regfile_alu_waddr_fw_i == regfile_addr_rb_id) && (regb_used_dec == 1'b1) && (regfile_addr_rb_id != '0);
   assign reg_d_alu_is_reg_c_id = (regfile_alu_waddr_fw_i == regfile_addr_rc_id) && (regc_used_dec == 1'b1) && (regfile_addr_rc_id != '0);
 
@@ -693,7 +698,7 @@ module cv32e41p_id_stage
       IMMB_I:      imm_b = imm_i_type;
       IMMB_S:      imm_b = imm_s_type;
       IMMB_U:      imm_b = imm_u_type;
-      IMMB_PCINCR: imm_b = is_compressed ? 32'h2 : 32'h4;
+      IMMB_PCINCR: imm_b = is_compressed_i ? 32'h2 : 32'h4;
       IMMB_S2:     imm_b = imm_s2_type;
       IMMB_BI:     imm_b = imm_bi_type;
       IMMB_S3:     imm_b = imm_s3_type;
@@ -982,6 +987,7 @@ module cv32e41p_id_stage
       .rst_n(rst_n),
 
       .scan_cg_en_i(scan_cg_en_i),
+      .en_reg_zero (en_reg_zero_write_i),
 
       // Read port a
       .raddr_a_i(regfile_addr_ra_id),
@@ -1180,6 +1186,7 @@ module cv32e41p_id_stage
       .ecall_insn_i  (ecall_insn_dec),
       .mret_insn_i   (mret_insn_dec),
       .uret_insn_i   (uret_insn_dec),
+      .seq_active_i   (seq_active_i),
 
       .dret_insn_i(dret_insn_dec),
 
@@ -1210,7 +1217,7 @@ module cv32e41p_id_stage
 
       // HWLoop signls
       .pc_id_i        (pc_id_i),
-      .is_compressed_i(is_compressed),
+      .is_compressed_i(is_compressed_i),
 
       .hwlp_start_addr_i(hwlp_start_o),
       .hwlp_end_addr_i  (hwlp_end_o),
@@ -1714,7 +1721,7 @@ module cv32e41p_id_stage
       mhpmevent_store_o <= minstret && data_req_id && data_we_id;
       mhpmevent_jump_o           <= minstret && ((ctrl_transfer_insn_in_id == BRANCH_JAL) || (ctrl_transfer_insn_in_id == BRANCH_JALR));
       mhpmevent_branch_o <= minstret && (ctrl_transfer_insn_in_id == BRANCH_COND);
-      mhpmevent_compressed_o <= minstret && is_compressed;
+      mhpmevent_compressed_o <= minstret && is_compressed_i;
       // EX stage count
       mhpmevent_branch_taken_o <= mhpmevent_branch_o && branch_decision_i;
       // IF stage count
@@ -1758,7 +1765,7 @@ module cv32e41p_id_stage
 
   // the instruction delivered to the ID stage should always be valid
   a_valid_instr :
-  assert property (@(posedge clk) (instr_valid_i & (~illegal_c_insn)) |-> (!$isunknown(instr)))
+  assert property (@(posedge clk) (instr_valid_i) |-> (!$isunknown(instr)))
   else $warning("%t, Instruction is valid, but has at least one X", $time);
 
   // Check that instruction after taken branch is flushed (more should actually be flushed, but that is not checked here)
@@ -1861,7 +1868,7 @@ module cv32e41p_id_stage
       endproperty
 
       a_vector_mode :
-        assert property (p_vector_mode);
+      assert property (p_vector_mode);
 
       // Check that certain multiplier operations are not used when PULP extension is not enabled
       property p_mul_op;
