@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.com/pulp-platform/riscv.svg?branch=master)](https://travis-ci.com/pulp-platform/riscv)
-
 # OpenHW Group CORE-V CV32E41P RISC-V IP
 
 CV32E41P is a small and efficient, 32-bit, in-order RISC-V core with a 4-stage pipeline that implements
