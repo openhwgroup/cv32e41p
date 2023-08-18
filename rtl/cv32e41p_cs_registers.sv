@@ -36,6 +36,9 @@ module cv32e41p_cs_registers
     parameter A_EXTENSION      = 0,
     parameter FPU              = 0,
     parameter ZFINX            = 0,
+    parameter Zcea             = 0,
+    parameter Zceb             = 0,
+    parameter Zcec             = 0,
     parameter PULP_SECURE      = 0,
     parameter USE_PMP          = 0,
     parameter N_PMP_ENTRIES    = 16,
@@ -82,6 +85,8 @@ module cv32e41p_cs_registers
     output logic [31:0] uepc_o,
     //mcounteren_o is always 0 if PULP_SECURE is zero
     output logic [31:0] mcounteren_o,
+
+    output logic [31:0] tbljalvec_o,
 
     // debug
     input  logic        debug_mode_i,
@@ -243,6 +248,8 @@ module cv32e41p_cs_registers
   logic [31:0] dscratch1_q, dscratch1_n;
   logic [31:0] mscratch_q, mscratch_n;
 
+  logic [31:0] tbljalvec_q, tbljalvec_n;
+
   logic [31:0] exception_pc;
   Status_t mstatus_q, mstatus_n;
   logic [5:0] mcause_q, mcause_n;
@@ -302,6 +309,8 @@ module cv32e41p_cs_registers
   end
 
   assign mie_bypass_o = ((csr_addr_i == CSR_MIE) && csr_mie_we) ? csr_mie_wdata & IRQ_MASK : mie_q;
+
+  assign tbljalvec_o  = Zcec ? tbljalvec_q : '0;
 
   ////////////////////////////////////////////
   //   ____ ____  ____    ____              //
@@ -447,11 +456,11 @@ module cv32e41p_cs_registers
         csr_rdata_int = mhpmevent_q[csr_addr_i[4:0]];
 
         // hardware loops  (not official)
-        CSR_LPSTART0: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_start_i[0];
-        CSR_LPEND0:   csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_end_i[0];
+        CSR_LPSTART0_or_TBLJALVEC: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_start_i[0];
+        CSR_LPEND0: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_end_i[0];
         CSR_LPCOUNT0: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_cnt_i[0];
         CSR_LPSTART1: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_start_i[1];
-        CSR_LPEND1:   csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_end_i[1];
+        CSR_LPEND1: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_end_i[1];
         CSR_LPCOUNT1: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_cnt_i[1];
 
         // PMP config registers
@@ -607,7 +616,11 @@ module cv32e41p_cs_registers
         csr_rdata_int = mhpmevent_q[csr_addr_i[4:0]];
 
         // hardware loops  (not official)
-        CSR_LPSTART0: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_start_i[0];
+        CSR_LPSTART0_or_TBLJALVEC: begin
+          if (PULP_XPULP) csr_rdata_int = hwlp_start_i[0];
+          else if (Zcec) csr_rdata_int = tbljalvec_q;
+          else csr_rdata_int = 0;
+        end
         CSR_LPEND0:   csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_end_i[0];
         CSR_LPCOUNT0: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_cnt_i[0];
         CSR_LPSTART1: csr_rdata_int = !PULP_XPULP ? 'b0 : hwlp_start_i[1];
@@ -739,7 +752,7 @@ module cv32e41p_cs_registers
         end
 
         // hardware loops
-        CSR_LPSTART0:
+        CSR_LPSTART0_or_TBLJALVEC:
         if (PULP_XPULP && csr_we_int) begin
           hwlp_we_o = 3'b001;
           hwlp_regid_o = 1'b0;
@@ -952,6 +965,7 @@ module cv32e41p_cs_registers
       mstatus_n = mstatus_q;
       mcause_n = mcause_q;
       ucause_n = '0;  // Not used if PULP_SECURE == 0
+      tbljalvec_n = tbljalvec_q;
       hwlp_we_o = '0;
       hwlp_regid_o = '0;
       exception_pc = pc_id_i;
@@ -1051,11 +1065,12 @@ module cv32e41p_cs_registers
         end
 
         // hardware loops
-        CSR_LPSTART0:
+        CSR_LPSTART0_or_TBLJALVEC:
         if (PULP_XPULP && csr_we_int) begin
           hwlp_we_o = 3'b001;
           hwlp_regid_o = 1'b0;
-        end
+        end else if (Zcec && csr_we_int) tbljalvec_n = csr_wdata_int;
+
         CSR_LPEND0:
         if (PULP_XPULP && csr_we_int) begin
           hwlp_we_o = 3'b010;
@@ -1247,6 +1262,7 @@ module cv32e41p_cs_registers
       mscratch_q <= '0;
       mie_q <= '0;
       mtvec_q <= '0;
+      tbljalvec_q <= '0;
       mtvec_mode_q <= MTVEC_MODE;
     end else begin
       // update CSRs
@@ -1269,6 +1285,7 @@ module cv32e41p_cs_registers
             mprv: 1'b0
         };
       end
+      tbljalvec_q  <= tbljalvec_n;
       mepc_q       <= mepc_n;
       mcause_q     <= mcause_n;
       depc_q       <= depc_n;

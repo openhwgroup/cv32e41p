@@ -25,6 +25,7 @@ module cv32e41p_aligner (
     input logic rst_n,
 
     input  logic fetch_valid_i,
+    input  logic seq_active_i,
     output logic aligner_ready_o, //prevents overwriting the fethced instruction
 
     input logic if_valid_i,
@@ -72,7 +73,7 @@ module cv32e41p_aligner (
       aligner_ready_q  <= 1'b0;
       hwlp_update_pc_q <= 1'b0;
     end else begin
-      if (update_state) begin
+      if (update_state && (!seq_active_i | branch_i)) begin
         pc_q             <= pc_n;
         state            <= next_state;
         r_instr_h        <= fetch_rdata_i[31:16];

@@ -166,8 +166,6 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
 );
 
 
-  assign is_compressed_o = (instr_rdata_i[1:0] != 2'b11);
-
   // write enable/request control
   logic       regfile_mem_we;
   logic       regfile_alu_we;
@@ -364,25 +362,33 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               3'b101: alu_operator_o = ALU_GES;
               3'b110: alu_operator_o = ALU_LTU;
               3'b111: alu_operator_o = ALU_GEU;
-              3'b010: begin // p.beqimm
+              3'b010: begin // p.beqimm or BEQI
                 if (PULP_XPULP) begin
                   alu_operator_o      = ALU_EQ;
                   regb_used_o         = 1'b0;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
                   imm_b_mux_sel_o     = IMMB_BI;
-                end else begin
+                end else if (Zcea) begin
+                  alu_operator_o      = ALU_EQ;
+                  rega_used_o         = 1'b0;
+                  alu_op_a_mux_sel_o  = OP_A_IMM;
+                  imm_a_mux_sel_o     = IMMA_Z;
+                end else
                   illegal_insn_o = 1'b1;
                 end
-              end
-              3'b011: begin // p.bneimm
+              3'b011: begin // p.bneimm or BNEI
                 if (PULP_XPULP) begin
                   alu_operator_o      = ALU_NE;
                   regb_used_o         = 1'b0;
                   alu_op_b_mux_sel_o  = OP_B_IMM;
                   imm_b_mux_sel_o     = IMMB_BI;
-                end else begin
+                end else if (Zcea) begin
+                  alu_operator_o      = ALU_NE;
+                  rega_used_o         = 1'b0;
+                  alu_op_a_mux_sel_o  = OP_A_IMM;
+                  imm_a_mux_sel_o     = IMMA_Z;
+                end else
                   illegal_insn_o = 1'b1;
-                end
               end
             endcase
           end
@@ -2499,7 +2505,9 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
                       csr_illegal = 1'b1;
 
                 // Hardware Loop register, UHARTID access
-                CSR_LPSTART0,
+                CSR_LPSTART0_or_TBLJALVEC:
+                  if(!PULP_XPULP && !Zcec) csr_illegal = 1'b1;
+
                   CSR_LPEND0,
                   CSR_LPCOUNT0,
                   CSR_LPSTART1,
@@ -2626,6 +2634,8 @@ module cv32e41p_merged_decoder import cv32e41p_pkg::*; import cv32e41p_apu_core_
               illegal_insn_o = 1'b1;
             end
           end // case: OPCODE_HWLOOP
+          default:
+            illegal_insn_o = 1'b1;
         endcase
       end
       // C0 16 Bit instructions
